@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -9,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
+GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 # 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
 load_dotenv(PROJECT_ROOT / '.env')
@@ -25,6 +27,44 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+
+def parse_github_datetime(value: str | None):
+    if not value:
+        return None
+    return datetime.strptime(value, GITHUB_TIME_FORMAT).replace(tzinfo=timezone.utc)
+
+
+def build_feedback(summary: dict, top_language: str | None):
+    push_events = summary['push_events_30d']
+    total_events = summary['total_events_30d']
+    active_days = summary['active_days_30d']
+
+    if total_events == 0:
+        headline = '최근 30일 공개 활동이 아직 많지 않아요.'
+        strength = '지금은 프로필과 저장소 구조를 먼저 쌓아도 좋은 시기입니다.'
+        next_step = '작은 커밋이라도 주 2~3회 남겨서 활동 흐름을 만들어보세요.'
+    elif push_events >= 20:
+        headline = '최근 한 달 동안 꾸준히 코드를 올리고 있어요.'
+        strength = 'Push 이벤트가 많아서 작업 흐름이 이어지고 있다는 점이 강점입니다.'
+        next_step = '이제는 README 정리나 PR 기록도 함께 남기면 성장 흐름이 더 잘 보입니다.'
+    elif active_days >= 10:
+        headline = '최근 30일 활동이 비교적 꾸준한 편이에요.'
+        strength = '여러 날짜에 걸쳐 활동이 분산돼 있어 루틴이 만들어지고 있습니다.'
+        next_step = '작업 단위를 더 잘게 나눠 커밋 수와 기록 밀도를 늘려보세요.'
+    else:
+        headline = '활동이 시작되고 있지만 아직 밀도는 낮은 편이에요.'
+        strength = '레포와 이벤트가 쌓이기 시작했고, 이제 패턴을 만들 단계입니다.'
+        next_step = '최근 작업을 하루 단위로 짧게라도 커밋해 활동 히스토리를 쌓아보세요.'
+
+    if top_language:
+      strength = f'{strength} 현재 가장 많이 보이는 언어는 {top_language}입니다.'
+
+    return {
+        'headline': headline,
+        'strength': strength,
+        'next_step': next_step,
+    }
 
 
 @app.get('/api/analyze/{username}')
@@ -82,6 +122,11 @@ async def analyze_user(username: str):
 
     event_types = {}
     recent_push_events = 0
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = now - timedelta(days=30)
+    recent_events_30d = []
+    active_days = set()
+
     for event in events_data:
         event_type = event.get('type')
         if not event_type:
@@ -89,15 +134,38 @@ async def analyze_user(username: str):
 
         event_types[event_type] = event_types.get(event_type, 0) + 1
 
-        # 이벤트 API가 보장하는 범위 안에서, 실제 공개 Push 이벤트 개수만 셉니다.
         if event_type == 'PushEvent':
             recent_push_events += 1
+
+        created_at = parse_github_datetime(event.get('created_at'))
+        if created_at and created_at >= thirty_days_ago:
+            recent_events_30d.append(event)
+            active_days.add(created_at.date().isoformat())
+
+    summary_event_types = {}
+    for event in recent_events_30d:
+        event_type = event.get('type')
+        if event_type:
+            summary_event_types[event_type] = summary_event_types.get(event_type, 0) + 1
+
+    push_events_30d = summary_event_types.get('PushEvent', 0)
 
     languages = {}
     for repo in repos_data:
         language = repo.get('language')
         if language:
             languages[language] = languages.get(language, 0) + 1
+
+    top_language = None
+    if languages:
+        top_language = max(languages.items(), key=lambda item: item[1])[0]
+
+    activity_summary = {
+        'window_days': 30,
+        'total_events_30d': len(recent_events_30d),
+        'push_events_30d': push_events_30d,
+        'active_days_30d': len(active_days),
+    }
 
     return {
         'status': 'success',
@@ -112,5 +180,7 @@ async def analyze_user(username: str):
             'recent_push_events': recent_push_events,
             'languages': languages,
             'event_types': event_types,
+            'activity_summary': activity_summary,
         },
+        'feedback': build_feedback(activity_summary, top_language),
     }

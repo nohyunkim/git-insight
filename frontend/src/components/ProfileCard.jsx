@@ -8,10 +8,16 @@ function toChartData(entries, limit = 5) {
 }
 
 function ProfileCard({ userData }) {
-  const { profile, stats, username } = userData
+  const { profile, stats, username, feedback } = userData
   const languageChartData = toChartData(Object.entries(stats.languages ?? {}))
   const eventChartData = toChartData(Object.entries(stats.event_types ?? {}))
   const repositoryCount = profile.total_repos ?? profile.public_repos ?? 0
+  const summary = stats.activity_summary ?? {
+    window_days: 30,
+    total_events_30d: 0,
+    push_events_30d: 0,
+    active_days_30d: 0,
+  }
 
   return (
     <article className="profile-card">
@@ -34,6 +40,13 @@ function ProfileCard({ userData }) {
         </div>
       </div>
 
+      <section className="insight-card">
+        <p className="insight-label">한 줄 인사이트</p>
+        <h3>{feedback?.headline ?? '활동 데이터를 기반으로 요약을 준비 중입니다.'}</h3>
+        <p>{feedback?.strength}</p>
+        <p>{feedback?.next_step}</p>
+      </section>
+
       <div className="metric-grid">
         <div className="metric-card">
           <span className="metric-label">Recent Public Push Events</span>
@@ -43,6 +56,23 @@ function ProfileCard({ userData }) {
         <div className="metric-card">
           <span className="metric-label">Repository Count</span>
           <strong>{repositoryCount}</strong>
+        </div>
+      </div>
+
+      <div className="summary-grid">
+        <div className="summary-card">
+          <span className="metric-label">Last 30 Days Events</span>
+          <strong>{summary.total_events_30d}</strong>
+        </div>
+
+        <div className="summary-card">
+          <span className="metric-label">Last 30 Days Pushes</span>
+          <strong>{summary.push_events_30d}</strong>
+        </div>
+
+        <div className="summary-card">
+          <span className="metric-label">Active Days</span>
+          <strong>{summary.active_days_30d}</strong>
         </div>
       </div>
 
