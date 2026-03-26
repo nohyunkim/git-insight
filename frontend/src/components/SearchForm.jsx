@@ -17,7 +17,7 @@ function SearchForm({ username, loading, onUsernameChange, onSearch }) {
           <input
             id="github-username"
             type="text"
-            placeholder="예: nohyunkim"
+            placeholder="예: github-id"
             value={username}
             onChange={(event) => onUsernameChange(event.target.value)}
             onKeyDown={handleKeyDown}

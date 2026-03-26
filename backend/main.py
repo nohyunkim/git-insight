@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 
-# 로컬 실행 위치가 달라도 루트/백엔드 어느 쪽 .env든 읽을 수 있게 처리합니다.
+# 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
 load_dotenv(PROJECT_ROOT / '.env')
 load_dotenv(BASE_DIR / '.env', override=False)
 
@@ -49,7 +49,7 @@ async def analyze_user(username: str):
 
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
-            # 프로필/이벤트/레포 목록을 동시에 불러와 응답 속도를 줄입니다.
+            # 프로필, 이벤트, 레포 목록을 병렬로 불러와 응답 시간을 줄입니다.
             user_res, events_res, repos_res = await asyncio.gather(
                 client.get(user_url, headers=headers),
                 client.get(events_url, headers=headers),
@@ -81,15 +81,17 @@ async def analyze_user(username: str):
     repos_data = repos_res.json()
 
     event_types = {}
-    recent_commits = 0
+    recent_push_events = 0
     for event in events_data:
         event_type = event.get('type')
         if not event_type:
             continue
 
         event_types[event_type] = event_types.get(event_type, 0) + 1
+
+        # 이벤트 API가 보장하는 범위 안에서, 실제 공개 Push 이벤트 개수만 셉니다.
         if event_type == 'PushEvent':
-            recent_commits += len(event.get('payload', {}).get('commits', []))
+            recent_push_events += 1
 
     languages = {}
     for repo in repos_data:
@@ -107,7 +109,7 @@ async def analyze_user(username: str):
             'total_repos': len(repos_data),
         },
         'stats': {
-            'recent_commits': recent_commits,
+            'recent_push_events': recent_push_events,
             'languages': languages,
             'event_types': event_types,
         },

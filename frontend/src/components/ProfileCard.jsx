@@ -28,16 +28,16 @@ function ProfileCard({ userData }) {
           <p className="profile-kicker">@{username}</p>
           <h2>{profile.name || username}</h2>
           <p className="profile-summary">
-            공개 레포 {repositoryCount}개와 최근 Push 기준 커밋
-            {` ${stats.recent_commits}개`}를 확인했습니다.
+            공개 레포 {repositoryCount}개와 최근 공개 Push 이벤트
+            {` ${stats.recent_push_events}개`}를 확인했습니다.
           </p>
         </div>
       </div>
 
       <div className="metric-grid">
         <div className="metric-card">
-          <span className="metric-label">Recent Push Commits</span>
-          <strong>{stats.recent_commits}</strong>
+          <span className="metric-label">Recent Public Push Events</span>
+          <strong>{stats.recent_push_events}</strong>
         </div>
 
         <div className="metric-card">
