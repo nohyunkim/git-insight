@@ -1,54 +1,73 @@
-import { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import { useState } from 'react'
+import { fetchGitHubInsight } from './api/github'
+import { ProfileCard } from './components/ProfileCard'
+import { SearchForm } from './components/SearchForm'
+import './App.css'
 
 function App() {
-  const [username, setUsername] = useState('');
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [username, setUsername] = useState('')
+  const [userData, setUserData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSearch = async () => {
-    if (!username) return;
-    setLoading(true);
-    setError(null);
-    try {
-      // 파이썬 백엔드 API로 데이터 요청
-      const response = await axios.get(`http://localhost:8000/api/analyze/${username}`);
-      setUserData(response.data);
-    } catch (err) {
-      setError('유저 정보를 불러오는데 실패했습니다. 백엔드 서버가 켜져있는지 확인해주세요.');
-    } finally {
-      setLoading(false);
+    const normalizedUsername = username.trim()
+
+    if (!normalizedUsername) {
+      setError('깃허브 아이디를 먼저 입력해주세요.')
+      setUserData(null)
+      return
     }
-  };
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const data = await fetchGitHubInsight(normalizedUsername)
+      setUserData(data)
+    } catch (requestError) {
+      setUserData(null)
+      setError(requestError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="app-container">
-      <h1>Git Insight Dashboard</h1>
-      <div className="search-box">
-        <input
-          type="text"
-          placeholder="GitHub 아이디를 입력하세요"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+    <main className="app-shell">
+      <section className="hero-panel">
+        <p className="eyebrow">Git activity for beginners</p>
+        <h1>Git Insight</h1>
+        <p className="hero-copy">
+          내 GitHub 활동을 한 번에 읽기 쉽게 보고, 다음에 무엇을 보면 좋을지
+          바로 이어질 수 있는 시작 화면입니다.
+        </p>
+
+        <SearchForm
+          username={username}
+          loading={loading}
+          onUsernameChange={setUsername}
+          onSearch={handleSearch}
         />
-        <button onClick={handleSearch}>검색</button>
-      </div>
 
-      {loading && <p>데이터를 불러오는 중입니다...</p>}
-      {error && <p className="error">{error}</p>}
+        {error ? <p className="status-message error-message">{error}</p> : null}
+      </section>
 
-      {userData && (
-        <div className="profile-section">
-          <img src={userData.profile.avatar_url} alt="프로필" width="150" />
-          <h2>{userData.profile.name || userData.username}</h2>
-          <p>공개 레포지토리: {userData.profile.public_repos}개</p>
-          <p>최근 커밋(Push): {userData.stats.recent_commits}개</p>
-        </div>
-      )}
-    </div>
-  );
+      <section className="content-panel">
+        {userData ? (
+          <ProfileCard userData={userData} />
+        ) : (
+          <div className="empty-state">
+            <h2>검색 전 상태</h2>
+            <p>
+              GitHub 아이디를 입력하면 프로필, 레포 수, 최근 활동, 언어 분포를
+              이 영역에서 보여줍니다.
+            </p>
+          </div>
+        )}
+      </section>
+    </main>
+  )
 }
 
-export default App;
+export default App

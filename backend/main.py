@@ -1,72 +1,114 @@
+import asyncio
+import os
+from pathlib import Path
+
+import httpx
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
-import os
-import asyncio
-from dotenv import load_dotenv
 
-load_dotenv()
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parent
 
-app = FastAPI(title="Git Insight API")
+# 로컬 실행 위치가 달라도 루트/백엔드 어느 쪽 .env든 읽을 수 있게 처리합니다.
+load_dotenv(PROJECT_ROOT / '.env')
+load_dotenv(BASE_DIR / '.env', override=False)
+
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+
+app = FastAPI(title='Git Insight API')
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], 
+    allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
-@app.get("/api/analyze/{username}")
+
+@app.get('/api/analyze/{username}')
 async def analyze_user(username: str):
-    headers = {"Accept": "application/vnd.github.v3+json"}
+    normalized_username = username.strip()
+
+    if not normalized_username:
+        raise HTTPException(status_code=400, detail='GitHub 아이디가 비어 있습니다.')
+
+    headers = {'Accept': 'application/vnd.github.v3+json'}
     if GITHUB_TOKEN:
-        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
-        
-    async with httpx.AsyncClient() as client:
-        # 3개의 깃허브 API 엔드포인트 주소
-        user_url = f"https://api.github.com/users/{username}"
-        events_url = f"https://api.github.com/users/{username}/events?per_page=100"
-        repos_url = f"https://api.github.com/users/{username}/repos?per_page=100&sort=updated"
+        headers['Authorization'] = f'Bearer {GITHUB_TOKEN}'
 
-        # 세 가지 API를 동시에 호출하여 속도 최적화
-        user_res, events_res, repos_res = await asyncio.gather(
-            client.get(user_url, headers=headers),
-            client.get(events_url, headers=headers),
-            client.get(repos_url, headers=headers)
+    user_url = f'https://api.github.com/users/{normalized_username}'
+    events_url = (
+        f'https://api.github.com/users/{normalized_username}/events?per_page=100'
+    )
+    repos_url = (
+        f'https://api.github.com/users/{normalized_username}/repos'
+        '?per_page=100&sort=updated'
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            # 프로필/이벤트/레포 목록을 동시에 불러와 응답 속도를 줄입니다.
+            user_res, events_res, repos_res = await asyncio.gather(
+                client.get(user_url, headers=headers),
+                client.get(events_url, headers=headers),
+                client.get(repos_url, headers=headers),
+            )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail='GitHub API 연결에 실패했습니다. 네트워크 상태를 확인해주세요.',
+        ) from exc
+
+    if user_res.status_code == 404:
+        raise HTTPException(status_code=404, detail='해당 GitHub 사용자를 찾지 못했습니다.')
+
+    if user_res.status_code != 200:
+        raise HTTPException(
+            status_code=user_res.status_code,
+            detail='GitHub 프로필 정보를 불러오지 못했습니다.',
         )
-        
-        if user_res.status_code != 200:
-            raise HTTPException(status_code=user_res.status_code, detail="유저를 찾을 수 없거나 API 호출 실패")
-            
-        user_data = user_res.json()
-        events_data = events_res.json() if events_res.status_code == 200 else []
-        repos_data = repos_res.json() if repos_res.status_code == 200 else []
 
-        # 1. 최근 커밋 수 계산 (PushEvent 분석)
-        recent_commits = 0
-        for event in events_data:
-            if event.get("type") == "PushEvent":
-                recent_commits += len(event.get("payload", {}).get("commits", []))
+    if repos_res.status_code != 200:
+        raise HTTPException(
+            status_code=repos_res.status_code,
+            detail='레포지토리 목록을 불러오지 못했습니다. GitHub 토큰 상태를 확인해주세요.',
+        )
 
-        # 2. 사용 언어 비율 분석
-        languages = {}
-        for repo in repos_data:
-            lang = repo.get("language")
-            if lang:
-                languages[lang] = languages.get(lang, 0) + 1
+    user_data = user_res.json()
+    events_data = events_res.json() if events_res.status_code == 200 else []
+    repos_data = repos_res.json()
 
-        return {
-            "status": "success",
-            "username": username,
-            "profile": {
-                "name": user_data.get("name"),
-                "avatar_url": user_data.get("avatar_url"),
-                "public_repos": user_data.get("public_repos")
-            },
-            "stats": {
-                "recent_commits": recent_commits,
-                "languages": languages
-            }
-        }
+    event_types = {}
+    recent_commits = 0
+    for event in events_data:
+        event_type = event.get('type')
+        if not event_type:
+            continue
+
+        event_types[event_type] = event_types.get(event_type, 0) + 1
+        if event_type == 'PushEvent':
+            recent_commits += len(event.get('payload', {}).get('commits', []))
+
+    languages = {}
+    for repo in repos_data:
+        language = repo.get('language')
+        if language:
+            languages[language] = languages.get(language, 0) + 1
+
+    return {
+        'status': 'success',
+        'username': normalized_username,
+        'profile': {
+            'name': user_data.get('name'),
+            'avatar_url': user_data.get('avatar_url'),
+            'public_repos': user_data.get('public_repos'),
+            'total_repos': len(repos_data),
+        },
+        'stats': {
+            'recent_commits': recent_commits,
+            'languages': languages,
+            'event_types': event_types,
+        },
+    }
