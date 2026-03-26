@@ -1,7 +1,17 @@
+import { ActivityChart, LanguageChart } from './InsightCharts'
+
+function toChartData(entries, limit = 5) {
+  return entries
+    .sort(([, leftValue], [, rightValue]) => rightValue - leftValue)
+    .slice(0, limit)
+    .map(([name, value]) => ({ name, value }))
+}
+
 function ProfileCard({ userData }) {
   const { profile, stats, username } = userData
-  const languageEntries = Object.entries(stats.languages)
-  const eventEntries = Object.entries(stats.event_types ?? {})
+  const languageChartData = toChartData(Object.entries(stats.languages ?? {}))
+  const eventChartData = toChartData(Object.entries(stats.event_types ?? {}))
+  const repositoryCount = profile.total_repos ?? profile.public_repos ?? 0
 
   return (
     <article className="profile-card">
@@ -18,8 +28,8 @@ function ProfileCard({ userData }) {
           <p className="profile-kicker">@{username}</p>
           <h2>{profile.name || username}</h2>
           <p className="profile-summary">
-            공개 레포 {profile.total_repos ?? profile.public_repos ?? 0}개, 최근
-            Push 기준 커밋 {stats.recent_commits}개
+            공개 레포 {repositoryCount}개와 최근 Push 기준 커밋
+            {` ${stats.recent_commits}개`}를 확인했습니다.
           </p>
         </div>
       </div>
@@ -32,41 +42,19 @@ function ProfileCard({ userData }) {
 
         <div className="metric-card">
           <span className="metric-label">Repository Count</span>
-          <strong>{profile.total_repos ?? profile.public_repos ?? 0}</strong>
+          <strong>{repositoryCount}</strong>
         </div>
       </div>
 
       <div className="detail-grid">
         <section className="detail-card">
           <h3>언어 분포</h3>
-          {languageEntries.length ? (
-            <ul className="chip-list">
-              {languageEntries.map(([language, count]) => (
-                <li key={language}>
-                  <span>{language}</span>
-                  <strong>{count}</strong>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">표시할 언어 데이터가 아직 없습니다.</p>
-          )}
+          <LanguageChart languages={languageChartData} />
         </section>
 
         <section className="detail-card">
           <h3>최근 이벤트</h3>
-          {eventEntries.length ? (
-            <ul className="chip-list">
-              {eventEntries.map(([eventName, count]) => (
-                <li key={eventName}>
-                  <span>{eventName}</span>
-                  <strong>{count}</strong>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">표시할 활동 이벤트가 아직 없습니다.</p>
-          )}
+          <ActivityChart events={eventChartData} />
         </section>
       </div>
     </article>
