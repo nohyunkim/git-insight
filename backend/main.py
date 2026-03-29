@@ -18,7 +18,7 @@ load_dotenv(BASE_DIR / '.env', override=False)
 
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 FRONTEND_ORIGINS = [
-    origin.strip()
+    origin.strip().rstrip('/')
     for origin in os.getenv('FRONTEND_ORIGINS', '').split(',')
     if origin.strip()
 ]
