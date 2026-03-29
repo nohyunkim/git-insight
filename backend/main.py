@@ -17,12 +17,18 @@ load_dotenv(PROJECT_ROOT / '.env')
 load_dotenv(BASE_DIR / '.env', override=False)
 
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+FRONTEND_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('FRONTEND_ORIGINS', '').split(',')
+    if origin.strip()
+]
 
 app = FastAPI(title='Git Insight API')
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'],
+    allow_origins=FRONTEND_ORIGINS,
+    allow_origin_regex=r'https?://(localhost|127\.0\.0\.1)(:\d+)?$',
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
