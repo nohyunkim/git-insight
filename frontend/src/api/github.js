@@ -15,9 +15,22 @@ export async function fetchGitHubInsight(username) {
     return response.data
   } catch (error) {
     const serverMessage = error.response?.data?.detail
+    const statusCode = error.response?.status
 
     if (serverMessage) {
       throw new Error(serverMessage)
+    }
+
+    if (statusCode === 503) {
+      throw new Error(
+        '서버가 막 깨어나는 중이거나 GitHub API 연결이 잠시 불안정합니다. 잠깐 뒤 다시 시도해주세요.',
+      )
+    }
+
+    if (statusCode === 403) {
+      throw new Error(
+        'GitHub API 요청이 제한되었습니다. 서버 토큰 설정이나 요청 한도를 확인해주세요.',
+      )
     }
 
     if (error.code === 'ECONNABORTED') {

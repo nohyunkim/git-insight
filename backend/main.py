@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 import os
 import re
@@ -326,6 +327,42 @@ def build_recommendation_hints(
     return hints[:4]
 
 
+def build_style_notes(
+    username: str,
+    activity_summary: dict,
+    event_types: dict,
+):
+    variants = [
+        {
+            'tone': '담백한 분석형',
+            'headline_rule': '판정문보다 최근 흐름을 묘사하는 문장으로 시작한다.',
+            'strength_rule': '활동 패턴이 보이는 이유를 차분하게 해석한다.',
+        },
+        {
+            'tone': '짧은 회고형',
+            'headline_rule': '최근 흐름을 한 번 정리해 주는 느낌으로 시작한다.',
+            'strength_rule': '눈에 띄는 강점과 아직 덜 보이는 점의 균형을 맞춘다.',
+        },
+        {
+            'tone': '서비스 요약형',
+            'headline_rule': '짧고 또렷하게 현재 상태를 요약한다.',
+            'strength_rule': '숫자보다 패턴과 맥락이 먼저 읽히게 쓴다.',
+        },
+        {
+            'tone': '멘토 코멘트형',
+            'headline_rule': '부담 주지 않는 말투로 현재 흐름을 짚는다.',
+            'strength_rule': '강점과 다음 성장 포인트가 자연스럽게 이어지게 쓴다.',
+        },
+    ]
+    seed_source = (
+        f"{username}:{activity_summary['total_events_30d']}:"
+        f"{activity_summary['push_events_30d']}:{activity_summary['active_days_30d']}:"
+        f"{event_types.get('PullRequestEvent', 0)}:{event_types.get('IssuesEvent', 0)}"
+    )
+    index = int(hashlib.md5(seed_source.encode('utf-8')).hexdigest(), 16) % len(variants)
+    return variants[index]
+
+
 def build_ai_prompt(
     username: str,
     activity_summary: dict,
@@ -341,6 +378,7 @@ def build_ai_prompt(
     strength_text = ' '.join(strength_hints[:2])
     improvement_text = improvement_hints[0] if improvement_hints else ''
     recommendation_text = recommendation_hints[0] if recommendation_hints else ''
+    style_notes = build_style_notes(username, activity_summary, event_types)
 
     return f"""
 너는 IT 서비스의 코드 분석 봇이다.
@@ -351,6 +389,11 @@ def build_ai_prompt(
 - 보완점: {improvement_text}
 - 제안: {recommendation_text}
 
+[문장 스타일]
+- 톤: {style_notes['tone']}
+- headline: {style_notes['headline_rule']}
+- strength: {style_notes['strength_rule']}
+
 [작성 규칙]
 1. [분석 데이터]에 없는 내용을 지어내지 마라.
 2. "초보 개발자", "활동을 시작하셨군요", "仓库" 같은 어색한 표현은 절대 금지한다. 저장소, 레포지토리처럼 자연스러운 표현만 써라.
@@ -358,7 +401,11 @@ def build_ai_prompt(
 4. headline, strength, improvement, next_step은 서로 다른 역할로 작성해라.
 5. improvement는 [보완점] 첫 문장을 기준으로 작성하고, next_step은 [제안] 첫 문장을 기준으로 작성해라.
 6. next_step에서는 push를 더 하라고 권하지 말고, [제안]에 있는 구체 행동만 추천해라.
-5. JSON 이외의 텍스트는 절대 출력하지 마라.
+7. 아래 표현을 그대로 반복하지 말고, 같은 뜻이라도 새로운 문장으로 다시 써라:
+   - 최근 30일 공개 활동이 아직 많지 않아요.
+   - 최근 한 달 동안 꾸준히 코드를 올리고 있어요.
+   - 최근 30일 활동이 비교적 꾸준한 편이에요.
+8. JSON 이외의 텍스트는 절대 출력하지 마라.
 
 [응답 JSON 형식]
 {{
@@ -493,21 +540,71 @@ async def analyze_user(username: str):
                 client.get(repos_url, headers=headers),
             )
     except httpx.RequestError as exc:
+        print(f'GitHub request error for {normalized_username}: {exc}')
         raise HTTPException(
             status_code=503,
-            detail='GitHub API 연결에 실패했습니다. 네트워크 상태를 확인해주세요.',
+            detail=(
+                'GitHub API 연결이 일시적으로 불안정합니다. '
+                '첫 요청 직후이거나 네트워크가 잠시 흔들릴 수 있으니 '
+                '10~20초 뒤 다시 시도해주세요.'
+            ),
         ) from exc
 
     if user_res.status_code == 404:
         raise HTTPException(status_code=404, detail='해당 GitHub 사용자를 찾지 못했습니다.')
 
+    if user_res.status_code == 403:
+        rate_limit_remaining = user_res.headers.get('x-ratelimit-remaining')
+        print(
+            'GitHub profile request blocked '
+            f'for {normalized_username}: remaining={rate_limit_remaining}'
+        )
+        detail = 'GitHub 프로필 정보를 불러오지 못했습니다.'
+        if rate_limit_remaining == '0':
+            detail = (
+                'GitHub API 요청 한도에 도달했습니다. '
+                '잠시 뒤 다시 시도해주세요.'
+            )
+        elif not GITHUB_TOKEN:
+            detail = (
+                'GitHub 토큰이 설정되지 않아 요청이 제한되고 있습니다. '
+                '서버 환경변수를 확인해주세요.'
+            )
+        else:
+            detail = (
+                'GitHub 토큰이 없거나 만료되었을 수 있습니다. '
+                '서버 환경변수를 확인해주세요.'
+            )
+        raise HTTPException(status_code=403, detail=detail)
+
     if user_res.status_code != 200:
+        print(
+            f'GitHub profile request failed for {normalized_username}: '
+            f'status={user_res.status_code}'
+        )
         raise HTTPException(
             status_code=user_res.status_code,
             detail='GitHub 프로필 정보를 불러오지 못했습니다.',
         )
 
+    if repos_res.status_code == 403:
+        rate_limit_remaining = repos_res.headers.get('x-ratelimit-remaining')
+        print(
+            'GitHub repos request blocked '
+            f'for {normalized_username}: remaining={rate_limit_remaining}'
+        )
+        detail = '레포지토리 목록을 불러오지 못했습니다.'
+        if rate_limit_remaining == '0':
+            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+        else:
+            detail = '레포지토리 목록 요청이 제한되었습니다. GitHub 토큰 상태를 확인해주세요.'
+        raise HTTPException(status_code=403, detail=detail)
+
     if repos_res.status_code != 200:
+        print(
+            f'GitHub repos request failed for {normalized_username}: '
+            f'status={repos_res.status_code}'
+        )
         raise HTTPException(
             status_code=repos_res.status_code,
             detail='레포지토리 목록을 불러오지 못했습니다. GitHub 토큰 상태를 확인해주세요.',
