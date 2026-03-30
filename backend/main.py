@@ -73,6 +73,21 @@ def build_feedback(summary: dict, top_language: str | None):
     }
 
 
+@app.get('/')
+async def root():
+    return {
+        'service': 'Git Insight API',
+        'status': 'ok',
+        'docs': '/docs',
+        'health': '/health',
+    }
+
+
+@app.get('/health')
+async def health():
+    return {'status': 'ok'}
+
+
 @app.get('/api/analyze/{username}')
 async def analyze_user(username: str):
     normalized_username = username.strip()

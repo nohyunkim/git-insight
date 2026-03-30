@@ -118,6 +118,12 @@
   border-radius: 18px;
 }
 
+.loading-message {
+  color: #e2e8f0;
+  background: rgba(12, 74, 110, 0.32);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+}
+
 .error-message {
   color: #fecaca;
   background: rgba(127, 29, 29, 0.35);

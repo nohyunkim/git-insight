@@ -50,6 +50,10 @@ function App() {
           onSearch={handleSearch}
         />
 
+        {loading ? (
+          <p className="status-message loading-message">검색 중입니다.</p>
+        ) : null}
+
         {error ? <p className="status-message error-message">{error}</p> : null}
       </section>
 
