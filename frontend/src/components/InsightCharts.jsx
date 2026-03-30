@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 
-const CHART_COLORS = ['#7dd3fc', '#fcd34d', '#86efac', '#f9a8d4', '#c4b5fd']
+const CHART_COLORS = ['#ffb86c', '#78dce8', '#a9dc76', '#ff6188', '#ab9df2']
 
 function ChartTooltip({ active, payload }) {
   if (!active || !payload?.length) {
@@ -86,19 +86,19 @@ function ActivityChart({ events }) {
             dataKey="name"
             tickLine={false}
             axisLine={false}
-            tick={{ fill: '#94a3b8', fontSize: 12 }}
+            tick={{ fill: '#9fb0c9', fontSize: 12 }}
           />
           <YAxis
             tickLine={false}
             axisLine={false}
             allowDecimals={false}
-            tick={{ fill: '#94a3b8', fontSize: 12 }}
+            tick={{ fill: '#9fb0c9', fontSize: 12 }}
           />
           <Tooltip
             content={<ChartTooltip />}
-            cursor={{ fill: 'rgba(125, 211, 252, 0.08)' }}
+            cursor={{ fill: 'rgba(255, 184, 108, 0.12)' }}
           />
-          <Bar dataKey="value" radius={[10, 10, 0, 0]} fill="#7dd3fc" />
+          <Bar dataKey="value" radius={[12, 12, 0, 0]} fill="#ffb86c" />
         </BarChart>
       </ResponsiveContainer>
     </div>

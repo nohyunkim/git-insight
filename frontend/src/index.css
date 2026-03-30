@@ -1,13 +1,14 @@
 :root {
+  color-scheme: dark;
   font-family:
-    'Segoe UI', 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+    'Pretendard', 'Segoe UI', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #f8fafc;
+  color: #edf3fb;
   background:
-    radial-gradient(circle at top, rgba(30, 41, 59, 0.9), rgba(2, 6, 23, 1) 54%),
-    #020617;
+    radial-gradient(circle at top, rgba(66, 94, 146, 0.38), transparent 28%),
+    linear-gradient(180deg, #111726, #151b2c 42%, #121827);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,6 +27,7 @@ body,
 
 body {
   margin: 0;
+  min-width: 320px;
 }
 
 button,

@@ -8,8 +8,9 @@ function SearchForm({ username, loading, onUsernameChange, onSearch }) {
   return (
     <div className="search-card">
       <label className="search-label" htmlFor="github-username">
-        GitHub username
+        GitHub 아이디
       </label>
+      <p className="search-help">예: `torvalds`, `gaearon`, `octocat`</p>
 
       <div className="search-row">
         <div className="input-wrapper">
@@ -25,7 +26,7 @@ function SearchForm({ username, loading, onUsernameChange, onSearch }) {
         </div>
 
         <button type="button" onClick={onSearch} disabled={loading}>
-          {loading ? '불러오는 중' : '검색'}
+          {loading ? '검색 중' : '분석 시작'}
         </button>
       </div>
     </div>
