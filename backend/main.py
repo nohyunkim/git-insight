@@ -1,9 +1,14 @@
 import asyncio
+import json
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,11 +22,17 @@ load_dotenv(PROJECT_ROOT / '.env')
 load_dotenv(BASE_DIR / '.env', override=False)
 
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'rule-based').strip().lower()
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
 FRONTEND_ORIGINS = [
     origin.strip().rstrip('/')
     for origin in os.getenv('FRONTEND_ORIGINS', '').split(',')
     if origin.strip()
 ]
+
+if genai and GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 app = FastAPI(title='Git Insight API')
 
@@ -71,6 +82,115 @@ def build_feedback(summary: dict, top_language: str | None):
         'strength': strength,
         'next_step': next_step,
     }
+
+
+def sanitize_feedback(payload: dict):
+    headline = str(payload.get('headline', '')).strip()
+    strength = str(payload.get('strength', '')).strip()
+    next_step = str(payload.get('next_step', '')).strip()
+
+    if not headline or not strength or not next_step:
+        return None
+
+    return {
+        'headline': headline[:140],
+        'strength': strength[:240],
+        'next_step': next_step[:240],
+    }
+
+
+def build_gemini_prompt(
+    username: str,
+    activity_summary: dict,
+    top_language: str | None,
+    languages: dict,
+    event_types: dict,
+    total_repos: int,
+    recent_push_events: int,
+):
+    top_languages = sorted(
+        languages.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:3]
+    top_event_types = sorted(
+        event_types.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:5]
+
+    prompt_data = {
+        'username': username,
+        'total_repos': total_repos,
+        'recent_push_events': recent_push_events,
+        'top_language': top_language,
+        'activity_summary': activity_summary,
+        'top_languages': top_languages,
+        'top_event_types': top_event_types,
+    }
+
+    return f"""
+너는 초보 개발자의 GitHub 공개 활동을 읽고 짧고 친절한 한국어 인사이트를 주는 멘토다.
+과장하지 말고, 제공된 데이터 범위 안에서만 판단해라.
+반드시 JSON 객체만 응답하고 마크다운, 코드펜스, 설명 문장은 절대 추가하지 마라.
+
+목표:
+- headline: 핵심 한 줄 요약
+- strength: 현재 활동의 강점 1~2문장
+- next_step: 다음에 해보면 좋은 행동 1문장
+
+톤:
+- 친절하고 담백하게
+- 초보자에게 부담 주지 않기
+- 사실을 과장하지 않기
+
+데이터:
+{json.dumps(prompt_data, ensure_ascii=False)}
+
+반드시 아래 형식의 JSON만 반환:
+{{
+  "headline": "문장",
+  "strength": "문장",
+  "next_step": "문장"
+}}
+""".strip()
+
+
+def generate_feedback_with_gemini(
+    username: str,
+    activity_summary: dict,
+    top_language: str | None,
+    languages: dict,
+    event_types: dict,
+    total_repos: int,
+    recent_push_events: int,
+):
+    if AI_PROVIDER != 'gemini' or not GEMINI_API_KEY or not genai:
+        return None
+
+    prompt = build_gemini_prompt(
+        username=username,
+        activity_summary=activity_summary,
+        top_language=top_language,
+        languages=languages,
+        event_types=event_types,
+        total_repos=total_repos,
+        recent_push_events=recent_push_events,
+    )
+
+    try:
+        model = genai.GenerativeModel(GEMINI_MODEL)
+        response = model.generate_content(prompt)
+        response_text = (
+            response.text.strip()
+            .replace('```json', '')
+            .replace('```', '')
+            .strip()
+        )
+        payload = json.loads(response_text)
+        return sanitize_feedback(payload)
+    except Exception:
+        return None
 
 
 @app.get('/')
@@ -188,6 +308,20 @@ async def analyze_user(username: str):
         'active_days_30d': len(active_days),
     }
 
+    feedback = await asyncio.to_thread(
+        generate_feedback_with_gemini,
+        normalized_username,
+        activity_summary,
+        top_language,
+        languages,
+        summary_event_types,
+        len(repos_data),
+        recent_push_events,
+    )
+    feedback_source = 'ai' if feedback else 'rule-based'
+    if not feedback:
+        feedback = build_feedback(activity_summary, top_language)
+
     return {
         'status': 'success',
         'username': normalized_username,
@@ -203,5 +337,6 @@ async def analyze_user(username: str):
             'event_types': event_types,
             'activity_summary': activity_summary,
         },
-        'feedback': build_feedback(activity_summary, top_language),
+        'feedback': feedback,
+        'feedback_source': feedback_source,
     }
