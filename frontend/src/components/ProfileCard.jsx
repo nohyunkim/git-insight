@@ -18,6 +18,12 @@ function ProfileCard({ userData }) {
     push_events_30d: 0,
     active_days_30d: 0,
   }
+  const strengthText =
+    feedback?.strength ?? '활동 흐름을 바탕으로 강점을 정리하고 있습니다.'
+  const improvementText =
+    feedback?.improvement ?? '보완 포인트를 함께 읽기 쉽게 정리하고 있습니다.'
+  const nextStepText =
+    feedback?.next_step ?? '다음 작업에서 바로 적용할 수 있는 제안을 준비 중입니다.'
 
   return (
     <article className="profile-card">
@@ -51,8 +57,9 @@ function ProfileCard({ userData }) {
       <section className="insight-card">
         <p className="insight-label">한 줄 인사이트</p>
         <h3>{feedback?.headline ?? '활동 데이터를 기반으로 요약을 준비 중입니다.'}</h3>
-        <p>{feedback?.strength}</p>
-        <p>{feedback?.next_step}</p>
+        <p>{strengthText}</p>
+        <p>{improvementText}</p>
+        <p>{nextStepText}</p>
       </section>
 
       <div className="metric-grid">

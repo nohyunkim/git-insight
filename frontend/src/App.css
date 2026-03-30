@@ -373,10 +373,17 @@
   margin: 0 0 12px;
   font-size: 1.5rem;
   color: #f4f7fb;
+  line-height: 1.28;
+  word-break: keep-all;
 }
 
 .insight-card p:last-child {
   margin-bottom: 0;
+}
+
+.insight-card p {
+  line-height: 1.7;
+  word-break: keep-all;
 }
 
 .insight-label {
