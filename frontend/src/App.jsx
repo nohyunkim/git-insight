@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
 import { ProfileCard } from './components/ProfileCard'
 import { SearchForm } from './components/SearchForm'
@@ -12,14 +12,34 @@ const PERIOD_OPTIONS = [
   { days: 365, label: '1년' },
 ]
 
+const DEFAULT_DAYS = 30
+const ALLOWED_PERIOD_DAYS = new Set(PERIOD_OPTIONS.map((option) => option.days))
+
+function readSharedState() {
+  if (typeof window === 'undefined') {
+    return { username: '', days: DEFAULT_DAYS }
+  }
+
+  const params = new URLSearchParams(window.location.search)
+  const username = params.get('u')?.trim() ?? ''
+  const days = Number.parseInt(params.get('days') ?? `${DEFAULT_DAYS}`, 10)
+
+  return {
+    username,
+    days: ALLOWED_PERIOD_DAYS.has(days) ? days : DEFAULT_DAYS,
+  }
+}
+
 function App() {
-  const [username, setUsername] = useState('')
-  const [selectedDays, setSelectedDays] = useState(30)
+  const sharedState = readSharedState()
+  const [username, setUsername] = useState(sharedState.username)
+  const [selectedDays, setSelectedDays] = useState(sharedState.days)
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [error, setError] = useState('')
   const latestRequestRef = useRef('')
+  const initialSearchDoneRef = useRef(false)
 
   const handleSearch = async (overrideDays = selectedDays) => {
     const normalizedUsername = username.trim()
@@ -105,6 +125,39 @@ function App() {
       handleSearch(days)
     }
   }
+
+  useEffect(() => {
+    if (initialSearchDoneRef.current) {
+      return
+    }
+
+    initialSearchDoneRef.current = true
+
+    if (sharedState.username) {
+      handleSearch(sharedState.days)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const normalizedUsername = username.trim()
+
+    if (normalizedUsername) {
+      params.set('u', normalizedUsername)
+      params.set('days', `${selectedDays}`)
+    } else {
+      params.delete('u')
+      params.delete('days')
+    }
+
+    const queryString = params.toString()
+    const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`
+    window.history.replaceState({}, '', nextUrl)
+  }, [username, selectedDays])
 
   return (
     <main className="app-shell">
