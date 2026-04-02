@@ -653,8 +653,6 @@ def summarize_analysis(
     repos_data: list,
     days: int,
 ):
-    event_types = {}
-    recent_push_events = 0
     now = datetime.now(timezone.utc)
     window_start = now - timedelta(days=days)
     recent_window_events = []
@@ -664,11 +662,6 @@ def summarize_analysis(
         event_type = event.get('type')
         if not event_type:
             continue
-
-        event_types[event_type] = event_types.get(event_type, 0) + 1
-
-        if event_type == 'PushEvent':
-            recent_push_events += 1
 
         created_at = parse_github_datetime(event.get('created_at'))
         if created_at and created_at >= window_start:
@@ -719,9 +712,9 @@ def summarize_analysis(
             'total_repos': len(repos_data),
         },
         'stats': {
-            'recent_push_events': recent_push_events,
+            'recent_push_events': summary_event_types.get('PushEvent', 0),
             'languages': languages,
-            'event_types': event_types,
+            'event_types': summary_event_types,
             'activity_summary': activity_summary,
         },
         'feedback': feedback,
