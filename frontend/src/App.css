@@ -130,9 +130,10 @@
 }
 
 .search-row-compact {
-  grid-template-columns: minmax(0, 1fr) 270px;
-  padding: 14px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  padding: 12px;
   border-radius: 24px;
+  align-items: center;
 }
 
 .input-wrapper {
@@ -185,8 +186,21 @@
 }
 
 .search-row-compact .search-actions {
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 138px 1fr;
   align-items: stretch;
+  align-self: stretch;
+}
+
+.search-row-compact .input-wrapper {
+  min-height: 58px;
+}
+
+.search-row-compact .period-trigger {
+  min-height: 58px;
+}
+
+.search-row-compact .search-submit-button {
+  min-height: 58px;
 }
 
 .period-menu {
@@ -230,12 +244,14 @@
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .period-trigger-value {
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .period-caret {
@@ -451,20 +467,20 @@
 .result-home-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   justify-self: start;
   padding: 0;
   border: 0;
   color: #e7eef9;
   background: transparent;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.26rem;
   font-weight: 700;
 }
 
 .result-home-link img {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
 }
 
 .status-message {
@@ -505,7 +521,8 @@
 }
 
 .result-empty-state {
-  min-height: 240px;
+  min-height: 176px;
+  padding: 28px 32px;
 }
 
 .empty-state h2,

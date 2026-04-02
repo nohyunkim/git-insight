@@ -32,6 +32,12 @@ const HOW_IT_WORKS_STEPS = [
   },
 ]
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
+
 function readCurrentRoute() {
   if (typeof window === 'undefined') {
     return 'landing'
@@ -126,7 +132,25 @@ function App() {
     setError('')
 
     try {
-      const data = await fetchGitHubInsight(targetUsername, targetDays)
+      let data
+
+      try {
+        data = await fetchGitHubInsight(targetUsername, targetDays)
+      } catch (firstError) {
+        const message = String(firstError?.message ?? '')
+        const shouldRetry =
+          message.includes('잠시') ||
+          message.includes('응답이 오래') ||
+          message.includes('다시 시도')
+
+        if (!shouldRetry) {
+          throw firstError
+        }
+
+        await delay(900)
+        data = await fetchGitHubInsight(targetUsername, targetDays)
+      }
+
       if (latestRequestRef.current !== requestKey) {
         return
       }
