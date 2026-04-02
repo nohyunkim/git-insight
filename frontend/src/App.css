@@ -579,18 +579,25 @@
   font-size: 0.9rem;
 }
 
-.result-action-buttons {
+.result-menu-wrap {
+  position: relative;
+}
+
+.result-menu-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
 }
 
-.result-action-buttons button {
-  min-height: 44px;
+.result-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
   padding: 0 16px;
   border: 1px solid rgba(103, 129, 176, 0.72);
-  border-radius: 999px;
+  border-radius: 16px;
   color: #eef4fb;
   background: rgba(36, 45, 72, 0.72);
   cursor: pointer;
@@ -600,13 +607,67 @@
     background 0.18s ease;
 }
 
-.result-action-buttons button:hover:enabled {
+.result-menu-trigger:hover {
   transform: translateY(-1px);
   border-color: rgba(113, 143, 223, 0.88);
   background: rgba(53, 67, 103, 0.84);
 }
 
-.result-action-buttons button:disabled {
+.result-menu-icon,
+.result-dropdown-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.result-menu-icon svg,
+.result-dropdown-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.result-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  z-index: 8;
+  min-width: 210px;
+  padding: 8px;
+  border: 1px solid rgba(103, 129, 176, 0.36);
+  border-radius: 18px;
+  background: rgba(17, 24, 39, 0.98);
+  box-shadow: 0 22px 42px rgba(7, 12, 24, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.result-dropdown-menu button + button {
+  margin-top: 4px;
+}
+
+.result-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  color: #eef4fb;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.result-dropdown-item:hover:enabled {
+  background: rgba(53, 67, 103, 0.48);
+}
+
+.result-dropdown-item:disabled {
   opacity: 0.68;
   cursor: wait;
 }
@@ -957,6 +1018,26 @@
   .result-action-buttons {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .result-menu-wrap {
+    width: 100%;
+  }
+
+  .result-menu-buttons {
+    width: 100%;
+  }
+
+  .result-menu-trigger {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .result-dropdown-menu {
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 10px);
+    min-width: 100%;
   }
 
   .section-heading {

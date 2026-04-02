@@ -1,5 +1,117 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityChart, LanguageChart } from './InsightCharts'
+
+const KAKAO_JAVASCRIPT_KEY = '376d342e159bd263e1645efea4abf0a1'
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M15 8a3 3 0 1 0-2.82-4H12a3 3 0 0 0 .18 1.01L8.91 6.63a3 3 0 0 0-1.91-.68 3 3 0 1 0 1.91 5.32l3.27 1.62a3 3 0 0 0-.18 1.03 3 3 0 1 0 .18-1.02l-3.27-1.63a3.03 3.03 0 0 0 0-2.54l3.27-1.62A3 3 0 0 0 15 8Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function ExportIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.29a1 1 0 1 1 1.4 1.42l-4 3.95a1 1 0 0 1-1.4 0l-4-3.95a1 1 0 1 1 1.4-1.42L11 12.59V4a1 1 0 0 1 1-1Zm-7 14a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M10.59 13.41a1 1 0 0 1 0-1.41l3.42-3.42a3 3 0 0 1 4.24 4.24l-1.83 1.83a3 3 0 0 1-4.24 0 1 1 0 1 1 1.41-1.41 1 1 0 0 0 1.42 0l1.82-1.83a1 1 0 1 0-1.41-1.41L12 13.41a1 1 0 0 1-1.41 0Zm2.82-2.82a1 1 0 0 1 0 1.41L10 15.42a3 3 0 1 1-4.24-4.24l1.83-1.83a3 3 0 0 1 4.24 0 1 1 0 1 1-1.41 1.41 1 1 0 0 0-1.42 0l-1.82 1.83a1 1 0 1 0 1.41 1.41L12 10.59a1 1 0 0 1 1.41 0Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function ImageIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M5 4a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H5Zm0 2h14a1 1 0 0 1 1 1v6.17l-3.59-3.58a2 2 0 0 0-2.82 0L8 15.17l-1.59-1.58a2 2 0 0 0-2.82 0L4 14V7a1 1 0 0 1 1-1Zm0 12a1 1 0 0 1-1-1v-.17l2-2 2.17 2.17a1 1 0 0 0 1.41 0L15 11.41l5 5V17a1 1 0 0 1-1 1H5Zm2-8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function PdfIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.83A2 2 0 0 0 18.41 8l-3.42-3.41A2 2 0 0 0 13.58 4H7Zm0 2h6v4a1 1 0 0 0 1 1h4v9H7V5Zm1.5 8h1.75a2.25 2.25 0 1 1 0 4.5H9.75V19H8.5v-6Zm1.25 1.1V16.4h.45a1.15 1.15 0 1 0 0-2.3h-.45Zm3.25-1.1h1.65A2.35 2.35 0 0 1 17 15.35v1.3A2.35 2.35 0 0 1 14.65 19H13v-6Zm1.25 1.1v3.7h.35a1.1 1.1 0 0 0 1.1-1.1v-1.5a1.1 1.1 0 0 0-1.1-1.1h-.35ZM18.5 13h3v1.1h-1.75v1.35h1.55v1.1h-1.55V19H18.5v-6Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M18.9 3H21l-4.58 5.23L22 21h-4.39l-3.44-4.94L9.85 21H7.74l4.9-5.6L2 3h4.5l3.11 4.48L13.53 3h2.11l-4.7 5.37L18.9 3Zm-1.54 16h1.22L5.96 4.9H4.66L17.36 19Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M13.5 21v-7h2.33l.35-2.73H13.5V9.53c0-.79.22-1.33 1.36-1.33H16.3V5.77A18.5 18.5 0 0 0 14.2 5c-2.08 0-3.5 1.27-3.5 3.61v2.66H8.4V14h2.3v7h2.8Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M6.94 8.5A1.56 1.56 0 1 1 6.94 5.38a1.56 1.56 0 0 1 0 3.12ZM5.7 9.75H8.2V18H5.7V9.75Zm4.07 0h2.4v1.13h.03c.34-.63 1.15-1.3 2.37-1.3 2.53 0 3 1.67 3 3.84V18h-2.5v-4.03c0-.96-.02-2.2-1.34-2.2-1.34 0-1.55 1.05-1.55 2.13V18h-2.41V9.75Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M20.5 11.92A8.5 8.5 0 0 0 6.3 5.62a8.44 8.44 0 0 0-1.2 9.95L4 20l4.57-1.18a8.5 8.5 0 0 0 11.93-6.9Zm-8.51 6.08a7.04 7.04 0 0 1-3.58-.98l-.26-.15-2.71.7.72-2.64-.17-.27a7.02 7.02 0 1 1 6 3.34Zm3.85-5.24c-.21-.1-1.22-.6-1.41-.67-.19-.07-.32-.1-.45.1-.13.2-.52.67-.64.8-.12.13-.23.15-.44.05-.21-.1-.87-.32-1.66-1.03a6.2 6.2 0 0 1-1.16-1.44c-.12-.2-.01-.31.09-.41.09-.09.2-.23.31-.34.1-.12.13-.2.2-.33.07-.13.03-.24-.02-.34-.05-.1-.45-1.09-.62-1.49-.16-.39-.32-.33-.44-.34h-.38c-.13 0-.34.05-.52.24-.18.2-.69.68-.69 1.66s.7 1.93.8 2.07c.1.13 1.37 2.09 3.33 2.93.47.2.84.32 1.12.4.47.15.9.13 1.24.08.38-.06 1.22-.5 1.39-.98.17-.48.17-.89.12-.98-.05-.09-.18-.15-.39-.25Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function KakaoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 4c-4.97 0-9 3.12-9 6.97 0 2.48 1.67 4.66 4.18 5.89l-.84 3.08a.48.48 0 0 0 .72.53l3.68-2.42c.41.05.83.08 1.26.08 4.97 0 9-3.12 9-6.97S16.97 4 12 4Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
 
 function toChartData(entries, limit = 5) {
   return entries
@@ -11,6 +123,23 @@ function toChartData(entries, limit = 5) {
 function buildExportFileName(username, summary, extension) {
   const dayLabel = summary?.window_days ?? 30
   return `git-insight-${username}-${dayLabel}d.${extension}`
+}
+
+function getCurrentShareUrl() {
+  return window.location.href
+}
+
+function ensureKakaoInitialized() {
+  const kakao = window.Kakao
+  if (!kakao) {
+    return false
+  }
+
+  if (!kakao.isInitialized()) {
+    kakao.init(KAKAO_JAVASCRIPT_KEY)
+  }
+
+  return true
 }
 
 async function exportCardAsPng(node, username, summary) {
@@ -74,7 +203,9 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   const { profile, stats, username, feedback, feedback_source: feedbackSource } = userData
   const [actionMessage, setActionMessage] = useState('')
   const [exportingAction, setExportingAction] = useState('')
+  const [openMenu, setOpenMenu] = useState('')
   const exportTargetRef = useRef(null)
+  const menuWrapRef = useRef(null)
 
   const languageChartData = toChartData(Object.entries(stats.languages ?? {}))
   const eventChartData = toChartData(Object.entries(stats.event_types ?? {}))
@@ -98,6 +229,81 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       ? 'AI 요약 반영'
       : '기본 요약'
 
+  const handleKakaoShare = useCallback(() => {
+    if (!ensureKakaoInitialized()) {
+      setActionMessage('카카오 공유를 아직 불러오지 못했어요. 잠시 뒤 다시 시도해주세요.')
+      setOpenMenu('')
+      return
+    }
+
+    const shareUrl = getCurrentShareUrl()
+
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: `${username}님의 Git Insight 결과`,
+        description: `${summaryLabel} GitHub 활동 요약을 확인해보세요.`,
+        imageUrl: 'https://git-insight.pages.dev/social-preview.png',
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      },
+      buttons: [
+        {
+          title: '결과 보기',
+          link: {
+            mobileWebUrl: shareUrl,
+            webUrl: shareUrl,
+          },
+        },
+      ],
+    })
+
+    setOpenMenu('')
+  }, [summaryLabel, username])
+
+  const shareLinks = useMemo(() => {
+    const title = `${username}님의 Git Insight 결과`
+    const text = `${summaryLabel} GitHub 활동 요약을 확인해보세요.`
+    const encodedUrl = encodeURIComponent(getCurrentShareUrl())
+    const encodedTitle = encodeURIComponent(title)
+    const encodedText = encodeURIComponent(text)
+
+    return [
+      {
+        id: 'twitter',
+        label: 'X에 공유',
+        icon: <XIcon />,
+        href: `https://twitter.com/intent/tweet?text=${encodedTitle}%20${encodedUrl}`,
+      },
+      {
+        id: 'facebook',
+        label: 'Facebook에 공유',
+        icon: <FacebookIcon />,
+        href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      },
+      {
+        id: 'whatsapp',
+        label: 'WhatsApp에 공유',
+        icon: <WhatsAppIcon />,
+        href: `https://api.whatsapp.com/send?text=${encodedText}%20${encodedUrl}`,
+      },
+      {
+        id: 'kakao',
+        label: '카카오톡 공유',
+        icon: <KakaoIcon />,
+        onClick: handleKakaoShare,
+      },
+      {
+        id: 'linkedin',
+        label: 'LinkedIn에 공유',
+        icon: <LinkedInIcon />,
+        href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+      },
+    ]
+  }, [handleKakaoShare, summaryLabel, username])
+
   useEffect(() => {
     if (!actionMessage) {
       return undefined
@@ -112,12 +318,38 @@ function ProfileCard({ userData, feedbackLoading = false }) {
     }
   }, [actionMessage])
 
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!menuWrapRef.current?.contains(event.target)) {
+        setOpenMenu('')
+      }
+    }
+
+    window.addEventListener('pointerdown', handlePointerDown)
+    return () => window.removeEventListener('pointerdown', handlePointerDown)
+  }, [])
+
+  useEffect(() => {
+    ensureKakaoInitialized()
+  }, [])
+
+  function toggleMenu(menuName) {
+    setOpenMenu((current) => (current === menuName ? '' : menuName))
+  }
+
+  function openShareWindow(href) {
+    window.open(href, '_blank', 'noopener,noreferrer,width=680,height=720')
+    setOpenMenu('')
+  }
+
   async function handleCopyLink() {
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(getCurrentShareUrl())
       setActionMessage('링크를 복사했어요.')
     } catch {
       setActionMessage('링크 복사에 실패했어요. 다시 시도해주세요.')
+    } finally {
+      setOpenMenu('')
     }
   }
 
@@ -136,6 +368,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       setActionMessage('이미지 저장에 실패했어요. 다시 시도해주세요.')
     } finally {
       setExportingAction('')
+      setOpenMenu('')
     }
   }
 
@@ -154,6 +387,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       setActionMessage('PDF 저장에 실패했어요. 다시 시도해주세요.')
     } finally {
       setExportingAction('')
+      setOpenMenu('')
     }
   }
 
@@ -246,30 +480,95 @@ function ProfileCard({ userData, feedbackLoading = false }) {
 
       <div className="result-actions">
         <div className="result-actions-copy">
-          <p className="result-actions-label">공유하기</p>
+          <p className="result-actions-label">공유/저장</p>
           <p className="result-actions-hint">
-            현재 선택한 아이디와 기간 기준 결과를 저장할 수 있어요.
+            현재 선택한 아이디와 기간 기준 결과를 저장하거나 링크로 공유할 수 있어요.
           </p>
         </div>
 
-        <div className="result-action-buttons">
-          <button type="button" onClick={handleCopyLink}>
-            링크 복사
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveImage}
-            disabled={exportingAction === 'image' || exportingAction === 'pdf'}
-          >
-            {exportingAction === 'image' ? '이미지 저장 중' : '이미지 저장'}
-          </button>
-          <button
-            type="button"
-            onClick={handleSavePdf}
-            disabled={exportingAction === 'image' || exportingAction === 'pdf'}
-          >
-            {exportingAction === 'pdf' ? 'PDF 저장 중' : 'PDF 저장'}
-          </button>
+        <div className="result-menu-wrap" ref={menuWrapRef}>
+          <div className="result-menu-buttons">
+            <button
+              type="button"
+              className="result-menu-trigger"
+              onClick={() => toggleMenu('share')}
+              aria-expanded={openMenu === 'share'}
+              aria-haspopup="menu"
+            >
+              <span className="result-menu-icon">
+                <ShareIcon />
+              </span>
+              <span>공유하기</span>
+            </button>
+
+            <button
+              type="button"
+              className="result-menu-trigger"
+              onClick={() => toggleMenu('export')}
+              aria-expanded={openMenu === 'export'}
+              aria-haspopup="menu"
+            >
+              <span className="result-menu-icon">
+                <ExportIcon />
+              </span>
+              <span>저장하기</span>
+            </button>
+          </div>
+
+          {openMenu === 'share' ? (
+            <div className="result-dropdown-menu result-dropdown-share" role="menu">
+              {shareLinks.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="result-dropdown-item"
+                  onClick={() => {
+                    if (item.onClick) {
+                      item.onClick()
+                      return
+                    }
+                    openShareWindow(item.href)
+                  }}
+                >
+                  <span className="result-dropdown-icon">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+              <button type="button" className="result-dropdown-item" onClick={handleCopyLink}>
+                <span className="result-dropdown-icon">
+                  <LinkIcon />
+                </span>
+                <span>링크 복사</span>
+              </button>
+            </div>
+          ) : null}
+
+          {openMenu === 'export' ? (
+            <div className="result-dropdown-menu result-dropdown-export" role="menu">
+              <button
+                type="button"
+                className="result-dropdown-item"
+                onClick={handleSaveImage}
+                disabled={exportingAction === 'image' || exportingAction === 'pdf'}
+              >
+                <span className="result-dropdown-icon">
+                  <ImageIcon />
+                </span>
+                <span>{exportingAction === 'image' ? 'PNG 저장 중' : 'PNG 저장'}</span>
+              </button>
+              <button
+                type="button"
+                className="result-dropdown-item"
+                onClick={handleSavePdf}
+                disabled={exportingAction === 'image' || exportingAction === 'pdf'}
+              >
+                <span className="result-dropdown-icon">
+                  <PdfIcon />
+                </span>
+                <span>{exportingAction === 'pdf' ? 'PDF 저장 중' : 'PDF 저장'}</span>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
