@@ -7,8 +7,8 @@ function toChartData(entries, limit = 5) {
     .map(([name, value]) => ({ name, value }))
 }
 
-function ProfileCard({ userData }) {
-  const { profile, stats, username, feedback } = userData
+function ProfileCard({ userData, feedbackLoading = false }) {
+  const { profile, stats, username, feedback, feedback_source: feedbackSource } = userData
   const languageChartData = toChartData(Object.entries(stats.languages ?? {}))
   const eventChartData = toChartData(Object.entries(stats.event_types ?? {}))
   const repositoryCount = profile.total_repos ?? profile.public_repos ?? 0
@@ -24,6 +24,11 @@ function ProfileCard({ userData }) {
     feedback?.improvement ?? '보완 포인트를 함께 읽기 쉽게 정리하고 있습니다.'
   const nextStepText =
     feedback?.next_step ?? '다음 작업에서 바로 적용할 수 있는 제안을 준비 중입니다.'
+  const feedbackBadge = feedbackLoading
+    ? 'AI 요약 보강 중'
+    : feedbackSource === 'ai'
+      ? 'AI 요약 반영됨'
+      : '빠른 기본 요약'
 
   return (
     <article className="profile-card">
@@ -50,12 +55,15 @@ function ProfileCard({ userData }) {
         <div className="profile-sidecard">
           <span className="sidecard-label">현재 활동 온도</span>
           <strong>{summary.total_events_30d > 0 ? '활동 중' : '준비 중'}</strong>
-          <p>최근 30일 공개 이벤트와 저장소 언어 분포를 기준으로 요약했습니다.</p>
+          <p>최근 30일 공개 이벤트와 레포지토리 언어 분포를 기준으로 요약했습니다.</p>
         </div>
       </div>
 
       <section className="insight-card">
-        <p className="insight-label">한 줄 인사이트</p>
+        <div className="insight-heading">
+          <p className="insight-label">집중 인사이트</p>
+          <span className="insight-status">{feedbackBadge}</span>
+        </div>
         <h3>{feedback?.headline ?? '활동 데이터를 기반으로 요약을 준비 중입니다.'}</h3>
         <p>{strengthText}</p>
         <p>{improvementText}</p>

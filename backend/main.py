@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import re
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -27,6 +28,7 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'rule-based').strip().lower()
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
+CACHE_TTL_SECONDS = int(os.getenv('CACHE_TTL_SECONDS', '300'))
 FRONTEND_ORIGINS = [
     origin.strip().rstrip('/')
     for origin in os.getenv('FRONTEND_ORIGINS', '').split(',')
@@ -35,7 +37,18 @@ FRONTEND_ORIGINS = [
 
 groq_client = Groq(api_key=GROQ_API_KEY) if Groq and GROQ_API_KEY else None
 
-app = FastAPI(title='Git Insight API')
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.github_client = httpx.AsyncClient(
+        timeout=20.0,
+        headers={'Accept': 'application/vnd.github.v3+json'},
+    )
+    yield
+    await app.state.github_client.aclose()
+
+
+app = FastAPI(title='Git Insight API', lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,6 +64,37 @@ def parse_github_datetime(value: str | None):
     if not value:
         return None
     return datetime.strptime(value, GITHUB_TIME_FORMAT).replace(tzinfo=timezone.utc)
+
+
+analysis_cache: dict[str, tuple[datetime, dict]] = {}
+feedback_cache: dict[str, tuple[datetime, dict]] = {}
+
+
+def get_cache_entry(cache: dict[str, tuple[datetime, dict]], key: str):
+    cached = cache.get(key)
+    if not cached:
+        return None
+
+    expires_at, payload = cached
+    if expires_at <= datetime.now(timezone.utc):
+        cache.pop(key, None)
+        return None
+
+    return payload
+
+
+def set_cache_entry(cache: dict[str, tuple[datetime, dict]], key: str, payload: dict):
+    cache[key] = (
+        datetime.now(timezone.utc) + timedelta(seconds=CACHE_TTL_SECONDS),
+        payload,
+    )
+
+
+def build_github_headers():
+    headers = {}
+    if GITHUB_TOKEN:
+        headers['Authorization'] = f'Bearer {GITHUB_TOKEN}'
+    return headers
 
 
 def build_feedback(
@@ -402,9 +446,9 @@ def build_ai_prompt(
 5. improvement는 [보완점] 첫 문장을 기준으로 작성하고, next_step은 [제안] 첫 문장을 기준으로 작성해라.
 6. next_step에서는 push를 더 하라고 권하지 말고, [제안]에 있는 구체 행동만 추천해라.
 7. 아래 표현을 그대로 반복하지 말고, 같은 뜻이라도 새로운 문장으로 다시 써라:
-   - 최근 30일 공개 활동이 아직 많지 않아요.
-   - 최근 한 달 동안 꾸준히 코드를 올리고 있어요.
-   - 최근 30일 활동이 비교적 꾸준한 편이에요.
+    - 최근 30일 공개 활동이 아직 많지 않아요.
+    - 최근 한 달 동안 꾸준히 코드를 올리고 있어요.
+    - 최근 30일 활동이 비교적 꾸준한 편이에요.
 8. JSON 이외의 텍스트는 절대 출력하지 마라.
 
 [응답 JSON 형식]
@@ -496,6 +540,223 @@ def generate_feedback_with_groq(
         return None, 'generation_failed'
 
 
+def normalize_username_or_400(username: str):
+    normalized_username = username.strip()
+    if not normalized_username:
+        raise HTTPException(status_code=400, detail='GitHub 아이디가 비어 있습니다.')
+    return normalized_username
+
+
+def raise_for_profile_error(username: str, response: httpx.Response):
+    if response.status_code == 404:
+        raise HTTPException(status_code=404, detail='해당 GitHub 사용자를 찾지 못했습니다.')
+
+    if response.status_code == 403:
+        rate_limit_remaining = response.headers.get('x-ratelimit-remaining')
+        print(
+            'GitHub profile request blocked '
+            f'for {username}: remaining={rate_limit_remaining}'
+        )
+        detail = 'GitHub 프로필 정보를 불러오지 못했습니다.'
+        if rate_limit_remaining == '0':
+            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+        elif not GITHUB_TOKEN:
+            detail = (
+                'GitHub 토큰이 설정되지 않아 요청이 제한되고 있습니다. '
+                '서버 환경변수를 확인해주세요.'
+            )
+        else:
+            detail = (
+                'GitHub 토큰이 없거나 만료되었을 수 있습니다. '
+                '서버 환경변수를 확인해주세요.'
+            )
+        raise HTTPException(status_code=403, detail=detail)
+
+    if response.status_code != 200:
+        print(
+            f'GitHub profile request failed for {username}: '
+            f'status={response.status_code}'
+        )
+        raise HTTPException(
+            status_code=response.status_code,
+            detail='GitHub 프로필 정보를 불러오지 못했습니다.',
+        )
+
+
+def raise_for_repos_error(username: str, response: httpx.Response):
+    if response.status_code == 403:
+        rate_limit_remaining = response.headers.get('x-ratelimit-remaining')
+        print(
+            'GitHub repos request blocked '
+            f'for {username}: remaining={rate_limit_remaining}'
+        )
+        detail = '레포지토리 목록을 불러오지 못했습니다.'
+        if rate_limit_remaining == '0':
+            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+        else:
+            detail = '레포지토리 목록 요청이 제한되었습니다. GitHub 토큰 상태를 확인해주세요.'
+        raise HTTPException(status_code=403, detail=detail)
+
+    if response.status_code != 200:
+        print(
+            f'GitHub repos request failed for {username}: '
+            f'status={response.status_code}'
+        )
+        raise HTTPException(
+            status_code=response.status_code,
+            detail='레포지토리 목록을 불러오지 못했습니다. GitHub 토큰 상태를 확인해주세요.',
+        )
+
+
+def summarize_analysis(username: str, user_data: dict, events_data: list, repos_data: list):
+    event_types = {}
+    recent_push_events = 0
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = now - timedelta(days=30)
+    recent_events_30d = []
+    active_days = set()
+
+    for event in events_data:
+        event_type = event.get('type')
+        if not event_type:
+            continue
+
+        event_types[event_type] = event_types.get(event_type, 0) + 1
+
+        if event_type == 'PushEvent':
+            recent_push_events += 1
+
+        created_at = parse_github_datetime(event.get('created_at'))
+        if created_at and created_at >= thirty_days_ago:
+            recent_events_30d.append(event)
+            active_days.add(created_at.date().isoformat())
+
+    summary_event_types = {}
+    for event in recent_events_30d:
+        event_type = event.get('type')
+        if event_type:
+            summary_event_types[event_type] = summary_event_types.get(event_type, 0) + 1
+
+    languages = {}
+    for repo in repos_data:
+        language = repo.get('language')
+        if language:
+            languages[language] = languages.get(language, 0) + 1
+
+    top_language = None
+    if languages:
+        top_language = max(languages.items(), key=lambda item: item[1])[0]
+
+    activity_summary = {
+        'window_days': 30,
+        'total_events_30d': len(recent_events_30d),
+        'push_events_30d': summary_event_types.get('PushEvent', 0),
+        'active_days_30d': len(active_days),
+    }
+
+    feedback = build_feedback(
+        activity_summary,
+        top_language,
+        event_types=summary_event_types,
+        total_repos=len(repos_data),
+    )
+
+    feedback_enabled = AI_PROVIDER == 'groq' and bool(groq_client)
+
+    return {
+        'status': 'success',
+        'username': username,
+        'profile': {
+            'name': user_data.get('name'),
+            'avatar_url': user_data.get('avatar_url'),
+            'public_repos': user_data.get('public_repos'),
+            'total_repos': len(repos_data),
+        },
+        'stats': {
+            'recent_push_events': recent_push_events,
+            'languages': languages,
+            'event_types': event_types,
+            'activity_summary': activity_summary,
+        },
+        'feedback': feedback,
+        'feedback_source': 'rule-based',
+        'feedback_pending': feedback_enabled,
+    }
+
+
+async def fetch_analysis_payload(username: str):
+    cached = get_cache_entry(analysis_cache, username)
+    if cached:
+        return cached
+
+    client = app.state.github_client
+    headers = build_github_headers()
+    user_url = f'https://api.github.com/users/{username}'
+    events_url = f'https://api.github.com/users/{username}/events?per_page=100'
+    repos_url = (
+        f'https://api.github.com/users/{username}/repos'
+        '?per_page=100&sort=updated'
+    )
+
+    try:
+        user_res, events_res, repos_res = await asyncio.gather(
+            client.get(user_url, headers=headers),
+            client.get(events_url, headers=headers),
+            client.get(repos_url, headers=headers),
+        )
+    except httpx.RequestError as exc:
+        print(f'GitHub request error for {username}: {exc}')
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                'GitHub API 연결이 일시적으로 불안정합니다. '
+                '첫 요청 직후이거나 네트워크가 잠시 흔들릴 수 있으니 10~20초 뒤 다시 시도해주세요.'
+            ),
+        ) from exc
+
+    raise_for_profile_error(username, user_res)
+    raise_for_repos_error(username, repos_res)
+
+    user_data = user_res.json()
+    events_data = events_res.json() if events_res.status_code == 200 else []
+    repos_data = repos_res.json()
+    payload = summarize_analysis(username, user_data, events_data, repos_data)
+    set_cache_entry(analysis_cache, username, payload)
+    return payload
+
+
+def build_feedback_payload(analysis_payload: dict):
+    stats = analysis_payload['stats']
+    profile = analysis_payload['profile']
+    languages = stats.get('languages', {})
+    activity_summary = stats.get('activity_summary', {})
+    event_types = stats.get('event_types', {})
+    top_language = None
+    if languages:
+        top_language = max(languages.items(), key=lambda item: item[1])[0]
+
+    feedback, feedback_source = generate_feedback_with_groq(
+        analysis_payload['username'],
+        activity_summary,
+        top_language,
+        languages,
+        event_types,
+        profile.get('total_repos', 0),
+        stats.get('recent_push_events', 0),
+    )
+
+    if not feedback:
+        feedback = analysis_payload['feedback']
+        feedback_source = 'rule-based'
+
+    return {
+        'username': analysis_payload['username'],
+        'feedback': feedback,
+        'feedback_source': feedback_source,
+        'feedback_pending': False,
+    }
+
+
 @app.get('/')
 async def root():
     return {
@@ -511,8 +772,8 @@ async def health():
     return {'status': 'ok'}
 
 
-@app.get('/api/analyze/{username}')
-async def analyze_user(username: str):
+@app.get('/api/analyze-legacy/{username}')
+async def analyze_user_legacy(username: str):
     normalized_username = username.strip()
 
     if not normalized_username:
@@ -699,3 +960,22 @@ async def analyze_user(username: str):
         'feedback': feedback,
         'feedback_source': feedback_source,
     }
+
+
+@app.get('/api/analyze/{username}')
+async def analyze_user(username: str):
+    normalized_username = normalize_username_or_400(username)
+    return await fetch_analysis_payload(normalized_username)
+
+
+@app.get('/api/feedback/{username}')
+async def get_feedback(username: str):
+    normalized_username = normalize_username_or_400(username)
+    cached = get_cache_entry(feedback_cache, normalized_username)
+    if cached:
+        return cached
+
+    analysis_payload = await fetch_analysis_payload(normalized_username)
+    feedback_payload = await asyncio.to_thread(build_feedback_payload, analysis_payload)
+    set_cache_entry(feedback_cache, normalized_username, feedback_payload)
+    return feedback_payload

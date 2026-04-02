@@ -25,8 +25,20 @@ function SearchForm({ username, loading, onUsernameChange, onSearch }) {
           />
         </div>
 
-        <button type="button" onClick={onSearch} disabled={loading}>
-          {loading ? '검색 중' : '분석 시작'}
+        <button
+          type="button"
+          onClick={onSearch}
+          disabled={loading}
+          aria-busy={loading}
+        >
+          {loading ? (
+            <span className="button-loading">
+              <span className="button-spinner" aria-hidden="true" />
+              불러오는 중
+            </span>
+          ) : (
+            '분석 시작'
+          )}
         </button>
       </div>
     </div>
