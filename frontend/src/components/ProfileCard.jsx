@@ -14,10 +14,12 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   const repositoryCount = profile.total_repos ?? profile.public_repos ?? 0
   const summary = stats.activity_summary ?? {
     window_days: 30,
+    window_label: '최근 30일',
     total_events_30d: 0,
     push_events_30d: 0,
     active_days_30d: 0,
   }
+  const summaryLabel = summary.window_label ?? `최근 ${summary.window_days}일`
   const strengthText =
     feedback?.strength ?? '활동 흐름을 바탕으로 강점을 정리하고 있습니다.'
   const improvementText =
@@ -46,7 +48,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
             <p className="profile-kicker">@{username}</p>
             <h2>{profile.name || username}</h2>
             <p className="profile-summary">
-              공개 레포 {repositoryCount}개와 최근 공개 Push 이벤트
+              공개 레포 {repositoryCount}개와 {summaryLabel} 공개 Push 이벤트
               {` ${stats.recent_push_events}개`}를 확인했습니다.
             </p>
           </div>
@@ -55,7 +57,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
         <div className="profile-sidecard">
           <span className="sidecard-label">현재 활동 온도</span>
           <strong>{summary.total_events_30d > 0 ? '활동 중' : '준비 중'}</strong>
-          <p>최근 30일 공개 이벤트와 레포지토리 언어 분포를 기준으로 요약했습니다.</p>
+          <p>{summaryLabel} 공개 이벤트와 레포지토리 언어 분포를 기준으로 요약했습니다.</p>
         </div>
       </div>
 
@@ -72,7 +74,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
 
       <div className="metric-grid">
         <div className="metric-card">
-          <span className="metric-label">최근 공개 Push 이벤트</span>
+          <span className="metric-label">{summaryLabel} Push 이벤트</span>
           <strong>{stats.recent_push_events}</strong>
         </div>
 
@@ -82,17 +84,17 @@ function ProfileCard({ userData, feedbackLoading = false }) {
         </div>
 
         <div className="metric-card accent-card">
-          <span className="metric-label">최근 30일 이벤트</span>
+          <span className="metric-label">{summaryLabel} 이벤트</span>
           <strong>{summary.total_events_30d}</strong>
         </div>
 
         <div className="metric-card accent-card">
-          <span className="metric-label">최근 30일 Push</span>
+          <span className="metric-label">{summaryLabel} Push</span>
           <strong>{summary.push_events_30d}</strong>
         </div>
 
         <div className="metric-card accent-card">
-          <span className="metric-label">활동한 날짜</span>
+          <span className="metric-label">{summaryLabel} 활동 날짜</span>
           <strong>{summary.active_days_30d}</strong>
         </div>
       </div>
@@ -108,7 +110,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
 
         <section className="detail-card">
           <div className="section-heading">
-            <h3>최근 이벤트</h3>
+            <h3>{summaryLabel} 이벤트</h3>
             <p>공개 활동 상위 이벤트 유형</p>
           </div>
           <ActivityChart events={eventChartData} />

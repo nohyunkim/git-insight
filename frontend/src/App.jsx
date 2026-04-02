@@ -4,15 +4,24 @@ import { ProfileCard } from './components/ProfileCard'
 import { SearchForm } from './components/SearchForm'
 import './App.css'
 
+const PERIOD_OPTIONS = [
+  { days: 7, label: '7일' },
+  { days: 30, label: '30일' },
+  { days: 90, label: '90일' },
+  { days: 180, label: '6개월' },
+  { days: 365, label: '1년' },
+]
+
 function App() {
   const [username, setUsername] = useState('')
+  const [selectedDays, setSelectedDays] = useState(30)
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [error, setError] = useState('')
   const latestRequestRef = useRef('')
 
-  const handleSearch = async () => {
+  const handleSearch = async (overrideDays = selectedDays) => {
     const normalizedUsername = username.trim()
 
     if (!normalizedUsername) {
@@ -21,14 +30,15 @@ function App() {
       return
     }
 
-    latestRequestRef.current = normalizedUsername
+    const requestKey = `${normalizedUsername}:${overrideDays}`
+    latestRequestRef.current = requestKey
     setLoading(true)
     setFeedbackLoading(false)
     setError('')
 
     try {
-      const data = await fetchGitHubInsight(normalizedUsername)
-      if (latestRequestRef.current !== normalizedUsername) {
+      const data = await fetchGitHubInsight(normalizedUsername, overrideDays)
+      if (latestRequestRef.current !== requestKey) {
         return
       }
 
@@ -41,8 +51,8 @@ function App() {
       setFeedbackLoading(true)
 
       try {
-        const feedbackData = await fetchGitHubFeedback(normalizedUsername)
-        if (latestRequestRef.current !== normalizedUsername) {
+        const feedbackData = await fetchGitHubFeedback(normalizedUsername, overrideDays)
+        if (latestRequestRef.current !== requestKey) {
           return
         }
 
@@ -59,7 +69,7 @@ function App() {
           }
         })
       } catch {
-        if (latestRequestRef.current === normalizedUsername) {
+        if (latestRequestRef.current === requestKey) {
           setUserData((current) => {
             if (!current || current.username !== normalizedUsername) {
               return current
@@ -72,19 +82,27 @@ function App() {
           })
         }
       } finally {
-        if (latestRequestRef.current === normalizedUsername) {
+        if (latestRequestRef.current === requestKey) {
           setFeedbackLoading(false)
         }
       }
     } catch (requestError) {
-      if (latestRequestRef.current === normalizedUsername) {
+      if (latestRequestRef.current === requestKey) {
         setUserData(null)
         setError(requestError.message)
       }
     } finally {
-      if (latestRequestRef.current === normalizedUsername) {
+      if (latestRequestRef.current === requestKey) {
         setLoading(false)
       }
+    }
+  }
+
+  const handlePeriodChange = (days) => {
+    setSelectedDays(days)
+
+    if (username.trim()) {
+      handleSearch(days)
     }
   }
 
@@ -116,8 +134,11 @@ function App() {
         <SearchForm
           username={username}
           loading={loading}
+          periods={PERIOD_OPTIONS}
+          selectedDays={selectedDays}
           onUsernameChange={setUsername}
-          onSearch={handleSearch}
+          onPeriodChange={handlePeriodChange}
+          onSearch={() => handleSearch(selectedDays)}
         />
 
         {error ? <p className="status-message error-message">{error}</p> : null}
@@ -131,8 +152,8 @@ function App() {
             <p className="empty-kicker">Preview</p>
             <h2>검색 대기 상태</h2>
             <p>
-              GitHub 아이디를 입력하면 프로필, 레포 수, 최근 활동, 언어 분포를
-              이 영역에서 바로 보여줍니다.
+              GitHub 아이디를 입력하고 기간을 고르면 프로필, 레포 수, 최근 활동,
+              언어 분포를 이 영역에서 바로 보여줍니다.
             </p>
           </div>
         )}

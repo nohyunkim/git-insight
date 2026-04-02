@@ -13,12 +13,13 @@ try:
 except ImportError:
     Groq = None
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+ALLOWED_WINDOWS = {7, 30, 90, 180, 365}
 
 # 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
 load_dotenv(PROJECT_ROOT / '.env')
@@ -97,6 +98,27 @@ def build_github_headers():
     return headers
 
 
+def normalize_window_days(days: int):
+    if days not in ALLOWED_WINDOWS:
+        raise HTTPException(status_code=400, detail='지원하지 않는 기간입니다.')
+    return days
+
+
+def build_cache_key(username: str, days: int):
+    return f'{username}:{days}'
+
+
+def window_label(days: int):
+    labels = {
+        7: '최근 7일',
+        30: '최근 30일',
+        90: '최근 90일',
+        180: '최근 6개월',
+        365: '최근 1년',
+    }
+    return labels.get(days, f'최근 {days}일')
+
+
 def build_feedback(
     summary: dict,
     top_language: str | None,
@@ -154,6 +176,22 @@ def build_feedback(
         'improvement': improvement,
         'next_step': next_step,
     }
+
+
+def adapt_feedback_to_window(feedback: dict, summary: dict):
+    label = summary.get('window_label', f"최근 {summary.get('window_days', 30)}일")
+    replacements = (
+        ('최근 30일', label),
+        ('최근 한 달', label),
+        ('30일 동안', label),
+    )
+    adapted = {}
+    for key, value in feedback.items():
+        updated = value
+        for source, target in replacements:
+            updated = updated.replace(source, target)
+        adapted[key] = updated
+    return adapted
 
 
 def sanitize_feedback(payload: dict):
@@ -608,12 +646,18 @@ def raise_for_repos_error(username: str, response: httpx.Response):
         )
 
 
-def summarize_analysis(username: str, user_data: dict, events_data: list, repos_data: list):
+def summarize_analysis(
+    username: str,
+    user_data: dict,
+    events_data: list,
+    repos_data: list,
+    days: int,
+):
     event_types = {}
     recent_push_events = 0
     now = datetime.now(timezone.utc)
-    thirty_days_ago = now - timedelta(days=30)
-    recent_events_30d = []
+    window_start = now - timedelta(days=days)
+    recent_window_events = []
     active_days = set()
 
     for event in events_data:
@@ -627,12 +671,12 @@ def summarize_analysis(username: str, user_data: dict, events_data: list, repos_
             recent_push_events += 1
 
         created_at = parse_github_datetime(event.get('created_at'))
-        if created_at and created_at >= thirty_days_ago:
-            recent_events_30d.append(event)
+        if created_at and created_at >= window_start:
+            recent_window_events.append(event)
             active_days.add(created_at.date().isoformat())
 
     summary_event_types = {}
-    for event in recent_events_30d:
+    for event in recent_window_events:
         event_type = event.get('type')
         if event_type:
             summary_event_types[event_type] = summary_event_types.get(event_type, 0) + 1
@@ -648,8 +692,9 @@ def summarize_analysis(username: str, user_data: dict, events_data: list, repos_
         top_language = max(languages.items(), key=lambda item: item[1])[0]
 
     activity_summary = {
-        'window_days': 30,
-        'total_events_30d': len(recent_events_30d),
+        'window_days': days,
+        'window_label': window_label(days),
+        'total_events_30d': len(recent_window_events),
         'push_events_30d': summary_event_types.get('PushEvent', 0),
         'active_days_30d': len(active_days),
     }
@@ -660,6 +705,7 @@ def summarize_analysis(username: str, user_data: dict, events_data: list, repos_
         event_types=summary_event_types,
         total_repos=len(repos_data),
     )
+    feedback = adapt_feedback_to_window(feedback, activity_summary)
 
     feedback_enabled = AI_PROVIDER == 'groq' and bool(groq_client)
 
@@ -684,26 +730,53 @@ def summarize_analysis(username: str, user_data: dict, events_data: list, repos_
     }
 
 
-async def fetch_analysis_payload(username: str):
-    cached = get_cache_entry(analysis_cache, username)
+async def fetch_user_events(client: httpx.AsyncClient, username: str, headers: dict, days: int):
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    collected_events = []
+
+    for page in range(1, 4):
+        response = await client.get(
+            f'https://api.github.com/users/{username}/events?per_page=100&page={page}',
+            headers=headers,
+        )
+        if response.status_code != 200:
+            if page == 1:
+                return response, []
+            break
+
+        page_events = response.json()
+        if not page_events:
+            break
+
+        collected_events.extend(page_events)
+
+        oldest_created_at = parse_github_datetime(page_events[-1].get('created_at'))
+        if oldest_created_at and oldest_created_at < cutoff:
+            break
+
+    return None, collected_events
+
+
+async def fetch_analysis_payload(username: str, days: int):
+    cache_key = build_cache_key(username, days)
+    cached = get_cache_entry(analysis_cache, cache_key)
     if cached:
         return cached
 
     client = app.state.github_client
     headers = build_github_headers()
     user_url = f'https://api.github.com/users/{username}'
-    events_url = f'https://api.github.com/users/{username}/events?per_page=100'
     repos_url = (
         f'https://api.github.com/users/{username}/repos'
         '?per_page=100&sort=updated'
     )
 
     try:
-        user_res, events_res, repos_res = await asyncio.gather(
+        user_res, repos_res = await asyncio.gather(
             client.get(user_url, headers=headers),
-            client.get(events_url, headers=headers),
             client.get(repos_url, headers=headers),
         )
+        events_res, events_data = await fetch_user_events(client, username, headers, days)
     except httpx.RequestError as exc:
         print(f'GitHub request error for {username}: {exc}')
         raise HTTPException(
@@ -718,10 +791,11 @@ async def fetch_analysis_payload(username: str):
     raise_for_repos_error(username, repos_res)
 
     user_data = user_res.json()
-    events_data = events_res.json() if events_res.status_code == 200 else []
+    if events_res is not None:
+        events_data = []
     repos_data = repos_res.json()
-    payload = summarize_analysis(username, user_data, events_data, repos_data)
-    set_cache_entry(analysis_cache, username, payload)
+    payload = summarize_analysis(username, user_data, events_data, repos_data, days)
+    set_cache_entry(analysis_cache, cache_key, payload)
     return payload
 
 
@@ -748,6 +822,8 @@ def build_feedback_payload(analysis_payload: dict):
     if not feedback:
         feedback = analysis_payload['feedback']
         feedback_source = 'rule-based'
+    else:
+        feedback = adapt_feedback_to_window(feedback, activity_summary)
 
     return {
         'username': analysis_payload['username'],
@@ -963,19 +1039,28 @@ async def analyze_user_legacy(username: str):
 
 
 @app.get('/api/analyze/{username}')
-async def analyze_user(username: str):
+async def analyze_user(
+    username: str,
+    days: int = Query(default=30),
+):
     normalized_username = normalize_username_or_400(username)
-    return await fetch_analysis_payload(normalized_username)
+    normalized_days = normalize_window_days(days)
+    return await fetch_analysis_payload(normalized_username, normalized_days)
 
 
 @app.get('/api/feedback/{username}')
-async def get_feedback(username: str):
+async def get_feedback(
+    username: str,
+    days: int = Query(default=30),
+):
     normalized_username = normalize_username_or_400(username)
-    cached = get_cache_entry(feedback_cache, normalized_username)
+    normalized_days = normalize_window_days(days)
+    cache_key = build_cache_key(normalized_username, normalized_days)
+    cached = get_cache_entry(feedback_cache, cache_key)
     if cached:
         return cached
 
-    analysis_payload = await fetch_analysis_payload(normalized_username)
+    analysis_payload = await fetch_analysis_payload(normalized_username, normalized_days)
     feedback_payload = await asyncio.to_thread(build_feedback_payload, analysis_payload)
-    set_cache_entry(feedback_cache, normalized_username, feedback_payload)
+    set_cache_entry(feedback_cache, cache_key, feedback_payload)
     return feedback_payload

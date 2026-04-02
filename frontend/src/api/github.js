@@ -32,11 +32,12 @@ function toUserFacingError(error, fallbackMessage) {
   return new Error(fallbackMessage)
 }
 
-export async function fetchGitHubInsight(username) {
+export async function fetchGitHubInsight(username, days) {
   try {
     const response = await axios.get(
       `${API_BASE_URL}/api/analyze/${encodeURIComponent(username)}`,
       {
+        params: { days },
         timeout: 15000,
       },
     )
@@ -50,11 +51,12 @@ export async function fetchGitHubInsight(username) {
   }
 }
 
-export async function fetchGitHubFeedback(username) {
+export async function fetchGitHubFeedback(username, days) {
   try {
     const response = await axios.get(
       `${API_BASE_URL}/api/feedback/${encodeURIComponent(username)}`,
       {
+        params: { days },
         timeout: 20000,
       },
     )
