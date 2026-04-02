@@ -39,17 +39,16 @@ function SearchForm({
 
   return (
     <div className="search-card">
-      <div className="search-meta-row">
+      <div className="search-head">
         <div className="search-copy">
-          <p className="search-kicker">GitHub Profile</p>
-          <label className="search-title" htmlFor="github-username">
-            GitHub 아이디
-          </label>
-          <p className="search-help">예: `torvalds`, `gaearon`, `octocat`</p>
+          <p className="search-kicker">Start With A Username</p>
+          <h2 className="search-title">GitHub ID로 바로 분석</h2>
+          <p className="search-subtitle">
+            선택한 기간 기준으로 활동 흐름, 언어 분포, 추천 인사이트를 한 번에 정리합니다.
+          </p>
         </div>
 
         <div className="period-menu" ref={periodMenuRef}>
-          <p className="period-label">조회 기간</p>
           <button
             type="button"
             className={`period-trigger${isPeriodOpen ? ' is-open' : ''}`}
@@ -57,7 +56,8 @@ function SearchForm({
             aria-haspopup="listbox"
             aria-expanded={isPeriodOpen}
           >
-            <span>{selectedPeriod.label}</span>
+            <span className="period-trigger-label">기간</span>
+            <span className="period-trigger-value">{selectedPeriod.label}</span>
             <span className="period-caret" aria-hidden="true">
               ▾
             </span>
@@ -97,7 +97,7 @@ function SearchForm({
           <input
             id="github-username"
             type="text"
-            placeholder="예: github-id"
+            placeholder="예: torvalds, gaearon, octocat"
             value={username}
             onChange={(event) => onUsernameChange(event.target.value)}
             onKeyDown={handleKeyDown}
