@@ -69,8 +69,8 @@
 }
 
 .search-card-landing {
-  width: min(900px, 100%);
-  margin-top: 40px;
+  width: min(820px, 100%);
+  margin-top: 36px;
 }
 
 .search-card-compact {
@@ -114,7 +114,7 @@
 .search-row {
   display: grid;
   gap: 14px;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid rgba(93, 111, 151, 0.6);
   border-radius: 28px;
   background:
@@ -126,7 +126,7 @@
 }
 
 .search-card-landing .search-row {
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 286px;
 }
 
 .search-row-compact {
@@ -139,7 +139,7 @@
 .input-wrapper {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  min-height: 62px;
+  min-height: 54px;
   overflow: hidden;
   border: 1px solid rgba(101, 119, 154, 0.95);
   border-radius: 22px;
@@ -159,7 +159,7 @@
 .input-prefix {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 14px;
   color: #95a8c4;
   background: rgba(34, 43, 67, 0.88);
   border-right: 1px solid rgba(101, 119, 154, 0.9);
@@ -167,9 +167,9 @@
 
 .input-wrapper input {
   min-width: 0;
-  padding: 0 16px;
+  padding: 0 14px;
   color: #f4f7fb;
-  font-size: 1.06rem;
+  font-size: 1rem;
   background: transparent;
   border: 0;
   outline: 0;
@@ -182,7 +182,16 @@
 }
 
 .search-card-landing .search-actions {
-  grid-template-rows: auto 1fr;
+  grid-template-columns: 136px 136px;
+  align-items: stretch;
+}
+
+.search-card-landing .period-trigger {
+  min-height: 54px;
+}
+
+.search-card-landing .search-submit-button {
+  min-height: 54px;
 }
 
 .search-row-compact .search-actions {
@@ -310,11 +319,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
+  min-height: 50px;
   gap: 10px;
   border: 0;
   border-radius: 18px;
-  font-size: 1rem;
+  font-size: 0.96rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #ffffff;
