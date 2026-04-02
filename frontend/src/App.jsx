@@ -110,7 +110,10 @@ function App() {
     <main className="app-shell">
       <section className="hero-panel">
         <div className="hero-heading">
-          <p className="eyebrow">GitHub Activity Reader</p>
+          <div className="hero-heading-brand">
+            <img className="hero-heading-logo" src="/branchicorn-tight.png" alt="Git Insight logo" />
+            <p className="eyebrow">GitHub Activity Reader</p>
+          </div>
           <p className="hero-badge">초보자도 바로 읽히는 활동 요약</p>
         </div>
 
