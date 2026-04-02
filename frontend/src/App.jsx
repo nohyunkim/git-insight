@@ -14,6 +14,31 @@ const PERIOD_OPTIONS = [
 
 const DEFAULT_DAYS = 30
 const ALLOWED_PERIOD_DAYS = new Set(PERIOD_OPTIONS.map((option) => option.days))
+const HOW_IT_WORKS_STEPS = [
+  {
+    step: 'Step 1',
+    title: 'GitHub ID 입력',
+    description: '보고 싶은 GitHub 사용자 아이디만 입력하면 바로 분석을 시작합니다.',
+  },
+  {
+    step: 'Step 2',
+    title: '활동 흐름 분석',
+    description: '레포지토리, 이벤트, 언어 분포를 바탕으로 읽기 쉬운 요약을 만듭니다.',
+  },
+  {
+    step: 'Step 3',
+    title: '다음 액션 확인',
+    description: '현재 강점과 보완 포인트, 다음에 보면 좋을 제안까지 한눈에 보여줍니다.',
+  },
+]
+
+function readCurrentRoute() {
+  if (typeof window === 'undefined') {
+    return 'landing'
+  }
+
+  return window.location.pathname === '/result' ? 'result' : 'landing'
+}
 
 function readSharedState() {
   if (typeof window === 'undefined') {
@@ -30,10 +55,25 @@ function readSharedState() {
   }
 }
 
+function buildResultUrl(username, days) {
+  const params = new URLSearchParams()
+
+  if (username) {
+    params.set('u', username)
+    params.set('days', `${days}`)
+  }
+
+  const queryString = params.toString()
+  return `/result${queryString ? `?${queryString}` : ''}`
+}
+
 function App() {
-  const sharedState = readSharedState()
-  const [username, setUsername] = useState(sharedState.username)
-  const [selectedDays, setSelectedDays] = useState(sharedState.days)
+  const initialState = readSharedState()
+  const initialStateRef = useRef(initialState)
+  const initialRouteRef = useRef(readCurrentRoute())
+  const [route, setRoute] = useState(readCurrentRoute())
+  const [username, setUsername] = useState(initialState.username)
+  const [selectedDays, setSelectedDays] = useState(initialState.days)
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
@@ -41,23 +81,52 @@ function App() {
   const latestRequestRef = useRef('')
   const initialSearchDoneRef = useRef(false)
 
-  const handleSearch = async (overrideDays = selectedDays) => {
-    const normalizedUsername = username.trim()
+  const syncFromLocation = () => {
+    const nextRoute = readCurrentRoute()
+    const nextState = readSharedState()
+    setRoute(nextRoute)
+    setUsername(nextState.username)
+    setSelectedDays(nextState.days)
 
-    if (!normalizedUsername) {
-      setError('GitHub 아이디를 먼저 입력해주세요.')
+    if (nextRoute !== 'result') {
       setUserData(null)
+      setError('')
+      setFeedbackLoading(false)
+      setLoading(false)
+    }
+
+    return { nextRoute, nextState }
+  }
+
+  const navigateToLanding = () => {
+    if (typeof window === 'undefined') {
       return
     }
 
-    const requestKey = `${normalizedUsername}:${overrideDays}`
+    window.history.pushState({}, '', '/')
+    syncFromLocation()
+  }
+
+  const navigateToResult = (nextUsername, nextDays, replace = false) => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const nextUrl = buildResultUrl(nextUsername, nextDays)
+    const historyMethod = replace ? 'replaceState' : 'pushState'
+    window.history[historyMethod]({}, '', nextUrl)
+    setRoute('result')
+  }
+
+  const performSearch = async (targetUsername, targetDays) => {
+    const requestKey = `${targetUsername}:${targetDays}`
     latestRequestRef.current = requestKey
     setLoading(true)
     setFeedbackLoading(false)
     setError('')
 
     try {
-      const data = await fetchGitHubInsight(normalizedUsername, overrideDays)
+      const data = await fetchGitHubInsight(targetUsername, targetDays)
       if (latestRequestRef.current !== requestKey) {
         return
       }
@@ -71,13 +140,13 @@ function App() {
       setFeedbackLoading(true)
 
       try {
-        const feedbackData = await fetchGitHubFeedback(normalizedUsername, overrideDays)
+        const feedbackData = await fetchGitHubFeedback(targetUsername, targetDays)
         if (latestRequestRef.current !== requestKey) {
           return
         }
 
         setUserData((current) => {
-          if (!current || current.username !== normalizedUsername) {
+          if (!current || current.username !== targetUsername) {
             return current
           }
 
@@ -91,7 +160,7 @@ function App() {
       } catch {
         if (latestRequestRef.current === requestKey) {
           setUserData((current) => {
-            if (!current || current.username !== normalizedUsername) {
+            if (!current || current.username !== targetUsername) {
               return current
             }
 
@@ -118,13 +187,45 @@ function App() {
     }
   }
 
+  const handleSearch = async (
+    overrideDays = selectedDays,
+    options = { navigate: true, replace: false },
+  ) => {
+    const normalizedUsername = username.trim()
+
+    if (!normalizedUsername) {
+      setError('GitHub 아이디를 먼저 입력해주세요.')
+      setUserData(null)
+      return
+    }
+
+    if (options.navigate !== false) {
+      navigateToResult(normalizedUsername, overrideDays, options.replace)
+    }
+
+    await performSearch(normalizedUsername, overrideDays)
+  }
+
   const handlePeriodChange = (days) => {
     setSelectedDays(days)
 
-    if (username.trim()) {
-      handleSearch(days)
+    if (route === 'result' && username.trim()) {
+      void handleSearch(days, { navigate: true, replace: true })
     }
   }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const { nextRoute, nextState } = syncFromLocation()
+
+      if (nextRoute === 'result' && nextState.username) {
+        void performSearch(nextState.username, nextState.days)
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   useEffect(() => {
     if (initialSearchDoneRef.current) {
@@ -133,86 +234,99 @@ function App() {
 
     initialSearchDoneRef.current = true
 
-    if (sharedState.username) {
-      handleSearch(sharedState.days)
+    if (initialRouteRef.current === 'result' && initialStateRef.current.username) {
+      void performSearch(initialStateRef.current.username, initialStateRef.current.days)
     }
   }, [])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
+  if (route === 'result') {
+    return (
+      <main className="app-shell result-shell">
+        <section className="result-header-panel">
+          <button type="button" className="result-home-link" onClick={navigateToLanding}>
+            <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
+            <span>Git Insight</span>
+          </button>
 
-    const params = new URLSearchParams(window.location.search)
-    const normalizedUsername = username.trim()
+          <SearchForm
+            variant="compact"
+            username={username}
+            loading={loading}
+            periods={PERIOD_OPTIONS}
+            selectedDays={selectedDays}
+            onUsernameChange={setUsername}
+            onPeriodChange={handlePeriodChange}
+            onSearch={() => handleSearch(selectedDays, { navigate: true, replace: true })}
+          />
 
-    if (normalizedUsername) {
-      params.set('u', normalizedUsername)
-      params.set('days', `${selectedDays}`)
-    } else {
-      params.delete('u')
-      params.delete('days')
-    }
+          {error ? <p className="status-message error-message">{error}</p> : null}
+        </section>
 
-    const queryString = params.toString()
-    const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`
-    window.history.replaceState({}, '', nextUrl)
-  }, [username, selectedDays])
+        <section className="content-panel">
+          {userData ? (
+            <ProfileCard userData={userData} feedbackLoading={feedbackLoading} />
+          ) : (
+            <div className="empty-state result-empty-state">
+              <p className="empty-kicker">Result</p>
+              <h2>분석 결과를 준비하고 있습니다</h2>
+              <p>
+                GitHub 아이디를 입력하고 기간을 고르면 요약, 언어 분포, 다음 액션까지 결과로
+                바로 보여드립니다.
+              </p>
+            </div>
+          )}
+        </section>
+      </main>
+    )
+  }
 
   return (
-    <main className="app-shell">
-      <section className="hero-panel">
-        <div className="hero-heading">
-          <div className="hero-heading-brand">
-            <img className="hero-heading-logo" src="/branchicorn-tight.png" alt="Git Insight logo" />
-            <p className="eyebrow">GitHub Activity Reader</p>
-          </div>
-          <p className="hero-badge">초보자도 바로 읽히는 활동 요약</p>
+    <main className="app-shell landing-shell">
+      <section className="landing-hero">
+        <div className="landing-brand-mark">
+          <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
         </div>
-
-        <div className="hero-copy-wrap">
-          <h1>Git Insight</h1>
-          <p className="hero-copy">
-            내 GitHub 활동을 한 번에 읽기 쉽게 보고, 다음에 무엇을 보면 좋을지
-            바로 이어지는 시작 화면입니다.
-          </p>
-        </div>
-
-        <div className="hero-notes">
-          <p className="hero-note-title">바로 확인할 수 있는 것</p>
-          <ul className="hero-note-list">
-            <li>최근 공개 활동의 흐름</li>
-            <li>레포지토리와 언어 분포</li>
-            <li>다음에 보면 좋은 핵심 인사이트</li>
-          </ul>
-        </div>
+        <p className="landing-kicker">GitHub Activity Reader</p>
+        <h1>Git Insight</h1>
+        <p className="landing-subtitle">
+          GitHub 활동을 한 번에 읽기 쉽게 보고, 다음에 무엇을 보면 좋을지 바로 이어지는
+          시작 화면입니다.
+        </p>
 
         <SearchForm
+          variant="landing"
           username={username}
           loading={loading}
           periods={PERIOD_OPTIONS}
           selectedDays={selectedDays}
           onUsernameChange={setUsername}
-          onPeriodChange={handlePeriodChange}
+          onPeriodChange={setSelectedDays}
           onSearch={() => handleSearch(selectedDays)}
         />
 
-        {error ? <p className="status-message error-message">{error}</p> : null}
+        {error ? <p className="status-message error-message landing-error">{error}</p> : null}
       </section>
 
-      <section className="content-panel">
-        {userData ? (
-          <ProfileCard userData={userData} feedbackLoading={feedbackLoading} />
-        ) : (
-          <div className="empty-state">
-            <p className="empty-kicker">Preview</p>
-            <h2>검색 대기 상태</h2>
-            <p>
-              GitHub 아이디를 입력하고 기간을 고르면 프로필, 레포 수, 최근 활동,
-              언어 분포를 이 영역에서 바로 보여줍니다.
-            </p>
-          </div>
-        )}
+      <section className="landing-steps">
+        <div className="landing-section-heading">
+          <p className="landing-section-kicker">How It Works</p>
+          <h2>결과를 보는 방식</h2>
+        </div>
+
+        <div className="landing-step-grid">
+          {HOW_IT_WORKS_STEPS.map((item) => (
+            <article key={item.step} className="landing-step-card">
+              <span className="landing-step-number">{item.step}</span>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+            </article>
+          ))}
+        </div>
+
+        <footer className="landing-footer">
+          <span className="landing-footer-line" aria-hidden="true" />
+          <p>© 2026 Git Insight. All Rights Reserved.</p>
+        </footer>
       </section>
     </main>
   )

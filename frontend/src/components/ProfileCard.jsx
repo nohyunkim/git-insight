@@ -56,6 +56,20 @@ async function exportCardAsPdf(node, username, summary) {
   pdf.save(buildExportFileName(username, summary, 'pdf'))
 }
 
+function buildWindowLabel(summary) {
+  if (summary?.window_label) {
+    return summary.window_label
+  }
+
+  const days = summary?.window_days ?? 30
+  if (days === 7) return '최근 7일'
+  if (days === 30) return '최근 30일'
+  if (days === 90) return '최근 90일'
+  if (days === 180) return '최근 6개월'
+  if (days === 365) return '최근 1년'
+  return `최근 ${days}일`
+}
+
 function ProfileCard({ userData, feedbackLoading = false }) {
   const { profile, stats, username, feedback, feedback_source: feedbackSource } = userData
   const [actionMessage, setActionMessage] = useState('')
@@ -67,23 +81,22 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   const repositoryCount = profile.total_repos ?? profile.public_repos ?? 0
   const summary = stats.activity_summary ?? {
     window_days: 30,
-    window_label: '최근 30일',
     total_events_30d: 0,
     push_events_30d: 0,
     active_days_30d: 0,
   }
-  const summaryLabel = summary.window_label ?? `최근 ${summary.window_days}일`
+  const summaryLabel = buildWindowLabel(summary)
   const strengthText =
     feedback?.strength ?? '활동 흐름을 바탕으로 강점을 정리하고 있습니다.'
   const improvementText =
     feedback?.improvement ?? '보완 포인트를 읽기 쉽게 정리하고 있습니다.'
   const nextStepText =
-    feedback?.next_step ?? '다음 작업에서 바로 적용할 수 있는 제안을 준비 중입니다.'
+    feedback?.next_step ?? '다음에 바로 적용할 수 있는 제안을 준비하고 있습니다.'
   const feedbackBadge = feedbackLoading
     ? 'AI 요약 보강 중'
     : feedbackSource === 'ai'
-      ? 'AI 요약 반영됨'
-      : '빠른 기본 요약'
+      ? 'AI 요약 반영'
+      : '기본 요약'
 
   useEffect(() => {
     if (!actionMessage) {
@@ -161,8 +174,8 @@ function ProfileCard({ userData, feedbackLoading = false }) {
               <p className="profile-kicker">@{username}</p>
               <h2>{profile.name || username}</h2>
               <p className="profile-summary">
-                공개 레포 {repositoryCount}개와 {summaryLabel} 공개 Push 이벤트
-                {` ${stats.recent_push_events}개`}를 확인했습니다.
+                공개 레포 {repositoryCount}개와 {summaryLabel} 공개 Push 이벤트{' '}
+                {stats.recent_push_events}개를 확인했습니다.
               </p>
             </div>
           </div>
@@ -170,16 +183,16 @@ function ProfileCard({ userData, feedbackLoading = false }) {
           <div className="profile-sidecard">
             <span className="sidecard-label">현재 활동 온도</span>
             <strong>{summary.total_events_30d > 0 ? '활동 중' : '준비 중'}</strong>
-            <p>{summaryLabel} 공개 이벤트와 레포지토리 언어 분포를 기준으로 요약했습니다.</p>
+            <p>{summaryLabel} 공개 이벤트와 언어 분포를 기준으로 요약했습니다.</p>
           </div>
         </div>
 
         <section className="insight-card">
           <div className="insight-heading">
-            <p className="insight-label">직관 인사이트</p>
+            <p className="insight-label">핵심 인사이트</p>
             <span className="insight-status">{feedbackBadge}</span>
           </div>
-          <h3>{feedback?.headline ?? '활동 데이터를 기반으로 요약을 준비 중입니다.'}</h3>
+          <h3>{feedback?.headline ?? '활동 데이터를 바탕으로 요약을 준비하고 있습니다.'}</h3>
           <p>{strengthText}</p>
           <p>{improvementText}</p>
           <p>{nextStepText}</p>
@@ -207,7 +220,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
           </div>
 
           <div className="metric-card accent-card">
-            <span className="metric-label">{summaryLabel} 활동 날짜</span>
+            <span className="metric-label">{summaryLabel} 활동 일수</span>
             <strong>{summary.active_days_30d}</strong>
           </div>
         </div>
@@ -234,7 +247,9 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       <div className="result-actions">
         <div className="result-actions-copy">
           <p className="result-actions-label">공유하기</p>
-          <p className="result-actions-hint">현재 선택한 아이디와 기간 기준 결과를 저장할 수 있어요.</p>
+          <p className="result-actions-hint">
+            현재 선택한 아이디와 기간 기준 결과를 저장할 수 있어요.
+          </p>
         </div>
 
         <div className="result-action-buttons">
