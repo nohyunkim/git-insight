@@ -78,9 +78,9 @@ function ActivityChart({ events }) {
   }
 
   return (
-    <div className="chart-frame">
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={events} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+    <div className="chart-frame chart-frame-activity">
+      <ResponsiveContainer width="100%" height={360}>
+        <BarChart data={events} margin={{ top: 42, right: 8, left: -18, bottom: 34 }}>
           <CartesianGrid stroke="rgba(148, 163, 184, 0.12)" vertical={false} />
           <XAxis
             dataKey="name"

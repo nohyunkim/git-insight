@@ -221,7 +221,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
             <LanguageChart languages={languageChartData} />
           </section>
 
-          <section className="detail-card">
+          <section className="detail-card detail-card-activity">
             <div className="section-heading">
               <h3>{summaryLabel} 이벤트</h3>
               <p>공개 활동 상위 이벤트 유형</p>

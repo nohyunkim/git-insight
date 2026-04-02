@@ -693,6 +693,18 @@
   margin-top: 12px;
 }
 
+.detail-card-activity {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.detail-card-activity .chart-frame-activity {
+  margin-top: 20px;
+  padding-bottom: 0;
+  min-height: 360px;
+}
+
 .chart-tooltip {
   padding: 10px 12px;
   border: 1px solid rgba(94, 111, 143, 0.86);
