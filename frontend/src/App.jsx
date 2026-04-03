@@ -17,6 +17,44 @@ const ALLOWED_PERIOD_DAYS = new Set(PERIOD_OPTIONS.map((option) => option.days))
 const FEEDBACK_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSdjVwQ8UH1s-Oc4szZ5N1Bej49aiMBBRPhOg7HxZngZcz4lpw/viewform?usp=publish-editor'
 const POLICY_MODAL_CONTENT = {
+  guide: {
+    title: '지표 해석 가이드',
+    sections: [
+      {
+        heading: '이벤트 수',
+        body: '선택한 기간 동안 발생한 공개 이벤트 총합입니다. 활동량을 넓게 보여주는 기본 지표입니다.',
+      },
+      {
+        heading: 'Push 수',
+        body: '코드 반영 빈도에 가까운 지표입니다. 이벤트 수 대비 Push 비율이 높으면 구현 중심 활동일 가능성이 큽니다.',
+      },
+      {
+        heading: '활동 일수',
+        body: '기간 내 실제 활동이 발생한 날짜 수입니다. 활동이 특정 구간에 몰렸는지, 꾸준히 분산되었는지 파악할 수 있습니다.',
+      },
+      {
+        heading: '언어 분포',
+        body: '공개 레포지토리 기준 상위 언어입니다. 최근 이벤트와 함께 보면 현재 집중 기술 스택을 해석하기 쉽습니다.',
+      },
+    ],
+  },
+  faq: {
+    title: '자주 묻는 질문',
+    sections: [
+      {
+        heading: '왜 private 저장소 활동은 적게 보이나요?',
+        body: '분석은 공개 API 기준으로 수행되어 private 저장소 세부 활동은 포함되지 않거나 제한적으로 반영될 수 있습니다.',
+      },
+      {
+        heading: '기간별 수치가 크게 달라지는 이유는?',
+        body: '7일, 30일, 90일, 6개월, 1년은 서로 다른 집계 창(window)이라 기간이 달라지면 이벤트 집계 범위도 달라집니다.',
+      },
+      {
+        heading: '결과 공유는 어떻게 하나요?',
+        body: '결과 화면의 공유/저장 메뉴에서 링크 복사, 이미지 저장, PDF 저장을 사용할 수 있으며 링크에 아이디/기간이 포함됩니다.',
+      },
+    ],
+  },
   about: {
     title: '서비스 소개',
     sections: [
@@ -429,6 +467,12 @@ function App() {
             <button type="button" className="footer-link-button" onClick={() => openPolicyModal('about')}>
               서비스 소개
             </button>
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('guide')}>
+              지표 해석 가이드
+            </button>
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('faq')}>
+              자주 묻는 질문
+            </button>
             <button
               type="button"
               className="footer-link-button"
@@ -499,6 +543,12 @@ function App() {
           <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
             <button type="button" className="footer-link-button" onClick={() => openPolicyModal('about')}>
               서비스 소개
+            </button>
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('guide')}>
+              지표 해석 가이드
+            </button>
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('faq')}>
+              자주 묻는 질문
             </button>
             <button
               type="button"
