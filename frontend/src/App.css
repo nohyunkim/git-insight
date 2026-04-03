@@ -468,7 +468,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 14px;
+  gap: 0;
 }
 
 .landing-footer-links a {
@@ -479,6 +479,7 @@
 }
 
 .footer-link-button {
+  position: relative;
   padding: 0;
   border: 0;
   color: #9fb0c9;
@@ -492,6 +493,22 @@
 .landing-footer-links a:hover,
 .footer-link-button:hover {
   color: #d9e8fb;
+}
+
+.landing-footer-links > * {
+  position: relative;
+  padding: 0 14px;
+  line-height: 1.3;
+}
+
+.landing-footer-links > *:not(:last-child)::after {
+  content: '|';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-52%);
+  color: rgba(159, 176, 201, 0.42);
+  pointer-events: none;
 }
 
 .policy-modal-backdrop {
