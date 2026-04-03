@@ -133,21 +133,43 @@ function getSharePreviewImageUrl() {
   return `${window.location.origin}/social-preview.png`
 }
 
-function ensureKakaoInitialized() {
+function getKakaoReadyState() {
   if (!KAKAO_JAVASCRIPT_KEY) {
-    return false
+    return 'missing_key'
   }
 
   const kakao = window.Kakao
   if (!kakao) {
-    return false
+    return 'missing_sdk'
   }
 
-  if (!kakao.isInitialized()) {
-    kakao.init(KAKAO_JAVASCRIPT_KEY)
+  try {
+    if (!kakao.isInitialized()) {
+      kakao.init(KAKAO_JAVASCRIPT_KEY)
+    }
+  } catch {
+    return 'init_failed'
   }
 
-  return true
+  if (!kakao.Share?.sendDefault) {
+    return 'share_unavailable'
+  }
+
+  return 'ready'
+}
+
+function fallbackCopyText(text) {
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.setAttribute('readonly', '')
+  textArea.style.position = 'fixed'
+  textArea.style.opacity = '0'
+  document.body.appendChild(textArea)
+  textArea.select()
+
+  const copied = document.execCommand('copy')
+  document.body.removeChild(textArea)
+  return copied
 }
 
 async function exportCardAsPng(node, username, summary) {
@@ -238,8 +260,18 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       : '기본 요약'
 
   const handleKakaoShare = useCallback(() => {
-    if (!ensureKakaoInitialized()) {
-      setActionMessage('카카오 공유를 아직 불러오지 못했어요. 잠시 뒤 다시 시도해주세요.')
+    const kakaoState = getKakaoReadyState()
+
+    if (kakaoState !== 'ready') {
+      if (kakaoState === 'missing_key') {
+        setActionMessage('카카오 공유 키가 설정되지 않았어요. 환경 변수를 확인해주세요.')
+      } else if (kakaoState === 'missing_sdk') {
+        setActionMessage('카카오 SDK를 불러오지 못했어요. 잠시 뒤 다시 시도해주세요.')
+      } else if (kakaoState === 'init_failed') {
+        setActionMessage('카카오 공유 초기화에 실패했어요. 앱 키 설정을 확인해주세요.')
+      } else {
+        setActionMessage('카카오 공유 기능을 사용할 수 없는 환경이에요.')
+      }
       setOpenMenu('')
       return
     }
@@ -347,7 +379,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       return
     }
 
-    ensureKakaoInitialized()
+    getKakaoReadyState()
   }, [])
 
   function toggleMenu(menuName) {
@@ -360,8 +392,17 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   }
 
   async function handleCopyLink() {
+    const shareUrl = getCurrentShareUrl()
+
     try {
-      await navigator.clipboard.writeText(getCurrentShareUrl())
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl)
+      } else {
+        const copied = fallbackCopyText(shareUrl)
+        if (!copied) {
+          throw new Error('fallback_copy_failed')
+        }
+      }
       setActionMessage('링크를 복사했어요.')
     } catch {
       setActionMessage('링크 복사에 실패했어요. 다시 시도해주세요.')
