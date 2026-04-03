@@ -199,8 +199,14 @@ function buildResultUrl(username, days) {
 }
 
 function PolicyModal({ policy, onClose }) {
+  const [openIndex, setOpenIndex] = useState(0)
+
   if (!policy) {
     return null
+  }
+
+  const toggleSection = (targetIndex) => {
+    setOpenIndex((current) => (current === targetIndex ? -1 : targetIndex))
   }
 
   return (
@@ -216,17 +222,35 @@ function PolicyModal({ policy, onClose }) {
       <section className="policy-modal" role="dialog" aria-modal="true" aria-label={policy.title}>
         <div className="policy-modal-header">
           <h2>{policy.title}</h2>
-          <button type="button" className="policy-modal-close" onClick={onClose}>
-            닫기
+          <button type="button" className="policy-modal-close" onClick={onClose} aria-label="닫기">
+            ×
           </button>
         </div>
         <div className="policy-modal-body">
-          {policy.sections.map((section) => (
-            <article key={section.heading} className="policy-modal-section">
-              <h3>{section.heading}</h3>
-              <p>{section.body}</p>
-            </article>
-          ))}
+          {policy.sections.map((section, index) => {
+            const isOpen = openIndex === index
+
+            return (
+              <article key={section.heading} className="policy-modal-section">
+                <button
+                  type="button"
+                  className="policy-accordion-trigger"
+                  onClick={() => toggleSection(index)}
+                  aria-expanded={isOpen}
+                >
+                  <span>{section.heading}</span>
+                  <span className={`policy-accordion-caret${isOpen ? ' is-open' : ''}`} aria-hidden="true">
+                    ⌃
+                  </span>
+                </button>
+                {isOpen ? (
+                  <div className="policy-accordion-content">
+                    <p>{section.body}</p>
+                  </div>
+                ) : null}
+              </article>
+            )
+          })}
         </div>
       </section>
     </div>
@@ -522,7 +546,11 @@ function App() {
           <p>© 2026 Git Insight. All Rights Reserved.</p>
         </footer>
 
-        <PolicyModal policy={activePolicy} onClose={closePolicyModal} />
+        <PolicyModal
+          key={activePolicy?.title ?? 'policy-modal-empty'}
+          policy={activePolicy}
+          onClose={closePolicyModal}
+        />
       </main>
     )
   }
@@ -600,7 +628,11 @@ function App() {
         </footer>
       </section>
 
-      <PolicyModal policy={activePolicy} onClose={closePolicyModal} />
+      <PolicyModal
+        key={activePolicy?.title ?? 'policy-modal-empty'}
+        policy={activePolicy}
+        onClose={closePolicyModal}
+      />
     </main>
   )
 }

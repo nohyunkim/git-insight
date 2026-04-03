@@ -474,8 +474,7 @@
 .landing-footer-links a {
   color: #9fb0c9;
   font-size: 0.92rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
 .footer-link-button {
@@ -484,8 +483,7 @@
   border: 0;
   color: #9fb0c9;
   font-size: 0.92rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
   background: transparent;
   cursor: pointer;
 }
@@ -539,7 +537,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(94, 111, 143, 0.56);
 }
 
 .policy-modal-header h2 {
@@ -549,13 +549,19 @@
 }
 
 .policy-modal-close {
-  min-height: 36px;
-  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border: 1px solid rgba(103, 129, 176, 0.72);
-  border-radius: 12px;
+  border-radius: 999px;
   color: #eef4fb;
   background: rgba(36, 45, 72, 0.72);
   cursor: pointer;
+  font-size: 1.35rem;
+  line-height: 0.9;
 }
 
 .policy-modal-close:hover {
@@ -565,23 +571,41 @@
 
 .policy-modal-body {
   display: grid;
-  gap: 14px;
 }
 
 .policy-modal-section {
-  padding: 16px;
-  border: 1px solid rgba(94, 111, 143, 0.72);
-  border-radius: 16px;
-  background: rgba(33, 41, 64, 0.6);
+  border-bottom: 1px solid rgba(94, 111, 143, 0.56);
 }
 
-.policy-modal-section h3 {
-  margin: 0 0 8px;
+.policy-accordion-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 18px 0;
+  border: 0;
   color: #eef4fb;
-  font-size: 1rem;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
-.policy-modal-section p {
+.policy-accordion-caret {
+  color: #c3d2e8;
+  transition: transform 0.18s ease;
+}
+
+.policy-accordion-caret.is-open {
+  transform: rotate(180deg);
+}
+
+.policy-accordion-content {
+  padding: 0 0 18px;
+}
+
+.policy-accordion-content p {
   margin: 0;
   color: #aab9cf;
   line-height: 1.68;
@@ -1186,6 +1210,19 @@
 
   .input-wrapper input {
     min-height: 56px;
+  }
+
+  .landing-footer-links {
+    row-gap: 8px;
+  }
+
+  .landing-footer-links > * {
+    padding: 0 10px;
+    font-size: 0.88rem;
+  }
+
+  .landing-footer-links > *:not(:last-child)::after {
+    content: none;
   }
 
   .policy-modal-backdrop {
