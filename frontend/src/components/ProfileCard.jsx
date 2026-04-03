@@ -234,6 +234,16 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   const [actionMessage, setActionMessage] = useState('')
   const [exportingAction, setExportingAction] = useState('')
   const [openMenu, setOpenMenu] = useState('')
+  const [isMobileLayout, setIsMobileLayout] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+
+    return window.matchMedia('(max-width: 768px)').matches
+  })
+  const [isChartsExpanded, setIsChartsExpanded] = useState(false)
+  const [isActionsExpanded, setIsActionsExpanded] = useState(false)
+  const [isInsightExpanded, setIsInsightExpanded] = useState(false)
   const exportTargetRef = useRef(null)
   const menuWrapRef = useRef(null)
 
@@ -375,6 +385,37 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)')
+
+    const handleChange = (event) => {
+      setIsMobileLayout(event.matches)
+    }
+
+    setIsMobileLayout(mediaQuery.matches)
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
+  }, [])
+
+  useEffect(() => {
+    if (!isMobileLayout) {
+      setIsChartsExpanded(false)
+      setIsActionsExpanded(false)
+      setIsInsightExpanded(false)
+      setOpenMenu('')
+    }
+  }, [isMobileLayout])
+
+  useEffect(() => {
     if (!KAKAO_JAVASCRIPT_KEY) {
       return
     }
@@ -384,6 +425,19 @@ function ProfileCard({ userData, feedbackLoading = false }) {
 
   function toggleMenu(menuName) {
     setOpenMenu((current) => (current === menuName ? '' : menuName))
+  }
+
+  function toggleChartsSection() {
+    setIsChartsExpanded((current) => !current)
+  }
+
+  function toggleActionsSection() {
+    setOpenMenu('')
+    setIsActionsExpanded((current) => !current)
+  }
+
+  function toggleInsightSection() {
+    setIsInsightExpanded((current) => !current)
   }
 
   function openShareWindow(href) {
@@ -485,9 +539,33 @@ function ProfileCard({ userData, feedbackLoading = false }) {
             <span className="insight-status">{feedbackBadge}</span>
           </div>
           <h3>{feedback?.headline ?? '활동 데이터를 바탕으로 요약을 준비하고 있습니다.'}</h3>
-          <p>{strengthText}</p>
-          <p>{improvementText}</p>
-          <p>{nextStepText}</p>
+          {isMobileLayout ? (
+            <>
+              <p>{strengthText}</p>
+
+              {isInsightExpanded ? (
+                <>
+                  <p>{improvementText}</p>
+                  <p>{nextStepText}</p>
+                </>
+              ) : null}
+
+              <button
+                type="button"
+                className="mobile-section-toggle insight-toggle"
+                onClick={toggleInsightSection}
+                aria-expanded={isInsightExpanded}
+              >
+                {isInsightExpanded ? '인사이트 접기' : '인사이트 더 보기'}
+              </button>
+            </>
+          ) : (
+            <>
+              <p>{strengthText}</p>
+              <p>{improvementText}</p>
+              <p>{nextStepText}</p>
+            </>
+          )}
         </section>
 
         <div className="metric-grid">
@@ -517,23 +595,62 @@ function ProfileCard({ userData, feedbackLoading = false }) {
           </div>
         </div>
 
-        <div className="detail-grid">
-          <section className="detail-card">
-            <div className="section-heading">
-              <h3>언어 분포</h3>
-              <p>레포지토리 기준 상위 언어</p>
+        {isMobileLayout ? (
+          <div className="mobile-section-panel">
+            <div className="mobile-section-header">
+              <div>
+                <p className="mobile-section-kicker">Charts</p>
+                <h3>차트 자세히 보기</h3>
+              </div>
+              <button
+                type="button"
+                className="mobile-section-toggle"
+                onClick={toggleChartsSection}
+                aria-expanded={isChartsExpanded}
+              >
+                {isChartsExpanded ? '접기' : '열기'}
+              </button>
             </div>
-            <LanguageChart languages={languageChartData} />
-          </section>
 
-          <section className="detail-card detail-card-activity">
-            <div className="section-heading">
-              <h3>{summaryLabel} 이벤트</h3>
-              <p>공개 활동 상위 이벤트 유형</p>
-            </div>
-            <ActivityChart events={eventChartData} />
-          </section>
-        </div>
+            {isChartsExpanded ? (
+              <div className="detail-grid">
+                <section className="detail-card">
+                  <div className="section-heading">
+                    <h3>언어 분포</h3>
+                    <p>레포지토리 기준 상위 언어</p>
+                  </div>
+                  <LanguageChart languages={languageChartData} />
+                </section>
+
+                <section className="detail-card detail-card-activity">
+                  <div className="section-heading">
+                    <h3>{summaryLabel} 이벤트</h3>
+                    <p>공개 활동 상위 이벤트 유형</p>
+                  </div>
+                  <ActivityChart events={eventChartData} />
+                </section>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="detail-grid">
+            <section className="detail-card">
+              <div className="section-heading">
+                <h3>언어 분포</h3>
+                <p>레포지토리 기준 상위 언어</p>
+              </div>
+              <LanguageChart languages={languageChartData} />
+            </section>
+
+            <section className="detail-card detail-card-activity">
+              <div className="section-heading">
+                <h3>{summaryLabel} 이벤트</h3>
+                <p>공개 활동 상위 이벤트 유형</p>
+              </div>
+              <ActivityChart events={eventChartData} />
+            </section>
+          </div>
+        )}
       </article>
 
       <div className="result-actions">
@@ -544,90 +661,190 @@ function ProfileCard({ userData, feedbackLoading = false }) {
           </p>
         </div>
 
-        <div className="result-menu-wrap" ref={menuWrapRef}>
-          <div className="result-menu-buttons">
+        {isMobileLayout ? (
+          <div className="mobile-actions-panel">
             <button
               type="button"
-              className="result-menu-trigger"
-              onClick={() => toggleMenu('share')}
-              aria-expanded={openMenu === 'share'}
-              aria-haspopup="menu"
+              className="mobile-section-toggle mobile-section-toggle-primary"
+              onClick={toggleActionsSection}
+              aria-expanded={isActionsExpanded}
             >
-              <span className="result-menu-icon">
-                <ShareIcon />
-              </span>
-              <span>공유하기</span>
+              {isActionsExpanded ? '공유/저장 닫기' : '공유/저장 열기'}
             </button>
 
-            <button
-              type="button"
-              className="result-menu-trigger"
-              onClick={() => toggleMenu('export')}
-              aria-expanded={openMenu === 'export'}
-              aria-haspopup="menu"
-            >
-              <span className="result-menu-icon">
-                <ExportIcon />
-              </span>
-              <span>저장하기</span>
-            </button>
+            {isActionsExpanded ? (
+              <div className="result-menu-wrap" ref={menuWrapRef}>
+                <div className="result-menu-buttons">
+                  <button
+                    type="button"
+                    className="result-menu-trigger"
+                    onClick={() => toggleMenu('share')}
+                    aria-expanded={openMenu === 'share'}
+                    aria-haspopup="menu"
+                  >
+                    <span className="result-menu-icon">
+                      <ShareIcon />
+                    </span>
+                    <span>공유하기</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="result-menu-trigger"
+                    onClick={() => toggleMenu('export')}
+                    aria-expanded={openMenu === 'export'}
+                    aria-haspopup="menu"
+                  >
+                    <span className="result-menu-icon">
+                      <ExportIcon />
+                    </span>
+                    <span>저장하기</span>
+                  </button>
+                </div>
+
+                {openMenu === 'share' ? (
+                  <div className="result-dropdown-menu result-dropdown-share" role="menu">
+                    {shareLinks.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="result-dropdown-item"
+                        onClick={() => {
+                          if (item.onClick) {
+                            item.onClick()
+                            return
+                          }
+                          openShareWindow(item.href)
+                        }}
+                      >
+                        <span className="result-dropdown-icon">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                    <button type="button" className="result-dropdown-item" onClick={handleCopyLink}>
+                      <span className="result-dropdown-icon">
+                        <LinkIcon />
+                      </span>
+                      <span>링크 복사</span>
+                    </button>
+                  </div>
+                ) : null}
+
+                {openMenu === 'export' ? (
+                  <div className="result-dropdown-menu result-dropdown-export" role="menu">
+                    <button
+                      type="button"
+                      className="result-dropdown-item"
+                      onClick={handleSaveImage}
+                      disabled={exportingAction === 'image' || exportingAction === 'pdf'}
+                    >
+                      <span className="result-dropdown-icon">
+                        <ImageIcon />
+                      </span>
+                      <span>{exportingAction === 'image' ? 'PNG 저장 중' : 'PNG 저장'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="result-dropdown-item"
+                      onClick={handleSavePdf}
+                      disabled={exportingAction === 'image' || exportingAction === 'pdf'}
+                    >
+                      <span className="result-dropdown-icon">
+                        <PdfIcon />
+                      </span>
+                      <span>{exportingAction === 'pdf' ? 'PDF 저장 중' : 'PDF 저장'}</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
+        ) : (
+          <div className="result-menu-wrap" ref={menuWrapRef}>
+            <div className="result-menu-buttons">
+              <button
+                type="button"
+                className="result-menu-trigger"
+                onClick={() => toggleMenu('share')}
+                aria-expanded={openMenu === 'share'}
+                aria-haspopup="menu"
+              >
+                <span className="result-menu-icon">
+                  <ShareIcon />
+                </span>
+                <span>공유하기</span>
+              </button>
 
-          {openMenu === 'share' ? (
-            <div className="result-dropdown-menu result-dropdown-share" role="menu">
-              {shareLinks.map((item) => (
+              <button
+                type="button"
+                className="result-menu-trigger"
+                onClick={() => toggleMenu('export')}
+                aria-expanded={openMenu === 'export'}
+                aria-haspopup="menu"
+              >
+                <span className="result-menu-icon">
+                  <ExportIcon />
+                </span>
+                <span>저장하기</span>
+              </button>
+            </div>
+
+            {openMenu === 'share' ? (
+              <div className="result-dropdown-menu result-dropdown-share" role="menu">
+                {shareLinks.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="result-dropdown-item"
+                    onClick={() => {
+                      if (item.onClick) {
+                        item.onClick()
+                        return
+                      }
+                      openShareWindow(item.href)
+                    }}
+                  >
+                    <span className="result-dropdown-icon">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+                <button type="button" className="result-dropdown-item" onClick={handleCopyLink}>
+                  <span className="result-dropdown-icon">
+                    <LinkIcon />
+                  </span>
+                  <span>링크 복사</span>
+                </button>
+              </div>
+            ) : null}
+
+            {openMenu === 'export' ? (
+              <div className="result-dropdown-menu result-dropdown-export" role="menu">
                 <button
-                  key={item.id}
                   type="button"
                   className="result-dropdown-item"
-                  onClick={() => {
-                    if (item.onClick) {
-                      item.onClick()
-                      return
-                    }
-                    openShareWindow(item.href)
-                  }}
+                  onClick={handleSaveImage}
+                  disabled={exportingAction === 'image' || exportingAction === 'pdf'}
                 >
-                  <span className="result-dropdown-icon">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="result-dropdown-icon">
+                    <ImageIcon />
+                  </span>
+                  <span>{exportingAction === 'image' ? 'PNG 저장 중' : 'PNG 저장'}</span>
                 </button>
-              ))}
-              <button type="button" className="result-dropdown-item" onClick={handleCopyLink}>
-                <span className="result-dropdown-icon">
-                  <LinkIcon />
-                </span>
-                <span>링크 복사</span>
-              </button>
-            </div>
-          ) : null}
-
-          {openMenu === 'export' ? (
-            <div className="result-dropdown-menu result-dropdown-export" role="menu">
-              <button
-                type="button"
-                className="result-dropdown-item"
-                onClick={handleSaveImage}
-                disabled={exportingAction === 'image' || exportingAction === 'pdf'}
-              >
-                <span className="result-dropdown-icon">
-                  <ImageIcon />
-                </span>
-                <span>{exportingAction === 'image' ? 'PNG 저장 중' : 'PNG 저장'}</span>
-              </button>
-              <button
-                type="button"
-                className="result-dropdown-item"
-                onClick={handleSavePdf}
-                disabled={exportingAction === 'image' || exportingAction === 'pdf'}
-              >
-                <span className="result-dropdown-icon">
-                  <PdfIcon />
-                </span>
-                <span>{exportingAction === 'pdf' ? 'PDF 저장 중' : 'PDF 저장'}</span>
-              </button>
-            </div>
-          ) : null}
-        </div>
+                <button
+                  type="button"
+                  className="result-dropdown-item"
+                  onClick={handleSavePdf}
+                  disabled={exportingAction === 'image' || exportingAction === 'pdf'}
+                >
+                  <span className="result-dropdown-icon">
+                    <PdfIcon />
+                  </span>
+                  <span>{exportingAction === 'pdf' ? 'PDF 저장 중' : 'PDF 저장'}</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {actionMessage ? <p className="result-action-message">{actionMessage}</p> : null}

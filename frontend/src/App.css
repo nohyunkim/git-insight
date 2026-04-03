@@ -888,6 +888,65 @@
   min-height: 360px;
 }
 
+.mobile-section-panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.mobile-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(94, 111, 143, 0.82);
+  border-radius: 22px;
+  background: rgba(33, 41, 64, 0.74);
+}
+
+.mobile-section-header h3 {
+  margin: 4px 0 0;
+  color: #f4f7fb;
+  font-size: 1.05rem;
+}
+
+.mobile-section-kicker {
+  margin: 0;
+  color: #8bc8ff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mobile-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(103, 129, 176, 0.72);
+  border-radius: 14px;
+  color: #eef4fb;
+  background: rgba(36, 45, 72, 0.72);
+  cursor: pointer;
+}
+
+.mobile-section-toggle-primary {
+  width: 100%;
+}
+
+.insight-toggle {
+  margin-top: 8px;
+}
+
+.mobile-actions-panel {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+}
+
 .chart-tooltip {
   padding: 10px 12px;
   border: 1px solid rgba(94, 111, 143, 0.86);
@@ -985,15 +1044,47 @@
     padding-top: 28px;
   }
 
+  .landing-brand-mark {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
+    border-radius: 18px;
+  }
+
+  .landing-hero h1 {
+    font-size: clamp(3rem, 17vw, 4.6rem);
+  }
+
   .landing-subtitle {
     font-size: 1.05rem;
   }
 
+  .search-card-landing {
+    margin-top: 26px;
+  }
+
+  .search-copy-standalone {
+    margin-bottom: 16px;
+  }
+
+  .search-title {
+    font-size: 1.35rem;
+  }
+
+  .search-subtitle {
+    font-size: 0.92rem;
+  }
+
   .search-row,
   .profile-top,
-  .metric-grid,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .search-row {
+    gap: 10px;
+    padding: 10px;
+    border-radius: 24px;
   }
 
   .search-actions,
@@ -1007,14 +1098,49 @@
     border-radius: 24px;
   }
 
+  .landing-steps {
+    padding-top: 38px;
+  }
+
+  .landing-step-card {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .landing-step-card h3 {
+    font-size: 1.22rem;
+  }
+
+  .landing-step-card p {
+    font-size: 0.95rem;
+  }
+
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .profile-header h2 {
+    font-size: 1.7rem;
+  }
+
+  .profile-summary {
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
+
+  .profile-sidecard {
+    padding: 18px 20px;
+    gap: 10px;
   }
 
   .result-actions {
     flex-direction: column;
     align-items: flex-start;
+    padding: 18px;
+    gap: 14px;
   }
 
   .result-action-buttons {
@@ -1035,6 +1161,42 @@
     justify-content: center;
   }
 
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .metric-card,
+  .detail-card,
+  .insight-card {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .metric-card strong {
+    font-size: 1.45rem;
+  }
+
+  .metric-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .insight-card h3 {
+    font-size: 1.18rem;
+    line-height: 1.35;
+  }
+
+  .insight-card p {
+    font-size: 0.97rem;
+    line-height: 1.62;
+  }
+
+  .result-actions-hint {
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+
   .result-dropdown-menu {
     left: 0;
     right: 0;
@@ -1047,14 +1209,30 @@
     align-items: flex-start;
   }
 
+  .mobile-section-header {
+    padding: 16px 18px;
+    border-radius: 20px;
+  }
+
+  .insight-toggle {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .detail-card-activity .chart-frame-activity {
+    min-height: 280px;
+  }
+
   .input-wrapper {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .input-prefix {
-    border-right: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-    padding: 12px 18px 0;
+    border-right: 1px solid rgba(101, 119, 154, 0.9);
+    border-bottom: 0;
+    padding: 0 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
   }
 
   .input-wrapper input {
