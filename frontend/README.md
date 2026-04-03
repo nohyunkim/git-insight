@@ -27,8 +27,9 @@ frontend/.env 또는 배포 환경에 아래 값을 설정하세요.
   - 예시: http://127.0.0.1:8000
 - VITE_KAKAO_JAVASCRIPT_KEY
   - 카카오 공유 기능 사용 시 필요
+  - 호환 키로 VITE_KAKAO_APP_KEY도 인식
 
-VITE_KAKAO_JAVASCRIPT_KEY가 없으면 카카오 공유 버튼은 표시되지 않습니다.
+VITE_KAKAO_JAVASCRIPT_KEY/VITE_KAKAO_APP_KEY가 없으면 카카오 공유 시 키 미설정 안내가 표시됩니다.
 
 ## 주요 디렉터리
 

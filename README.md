@@ -218,6 +218,12 @@ npm run dev
 
 ## 환경 변수
 
+프론트엔드(Cloudflare Pages 또는 `frontend/.env`)에는 아래 키를 설정하세요.
+
+- `VITE_API_BASE_URL`
+- 카카오 공유 키: `VITE_KAKAO_JAVASCRIPT_KEY` (권장)
+  - 호환 키로 `VITE_KAKAO_APP_KEY`도 인식합니다.
+
 루트 `.env`, `backend/.env`, 또는 배포 환경 변수에 아래 값을 설정할 수 있습니다.
 
 - `GITHUB_TOKEN`

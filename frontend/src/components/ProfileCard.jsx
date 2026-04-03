@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityChart, LanguageChart } from './InsightCharts'
 
-const KAKAO_JAVASCRIPT_KEY = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY ?? ''
+const DEFAULT_KAKAO_JAVASCRIPT_KEY = '376d342e159bd263e1645efea4abf0a1'
+
+const KAKAO_JAVASCRIPT_KEY = (
+  import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY ??
+  import.meta.env.VITE_KAKAO_APP_KEY ??
+  import.meta.env.VITE_KAKAO_KEY ??
+  DEFAULT_KAKAO_JAVASCRIPT_KEY
+).trim()
 
 function ShareIcon() {
   return (
@@ -264,7 +271,9 @@ function ProfileCard({ userData, feedbackLoading = false }) {
 
     if (kakaoState !== 'ready') {
       if (kakaoState === 'missing_key') {
-        setActionMessage('카카오 공유 키가 설정되지 않았어요. 환경 변수를 확인해주세요.')
+        setActionMessage(
+          '카카오 공유 키가 설정되지 않았어요. VITE_KAKAO_JAVASCRIPT_KEY 또는 VITE_KAKAO_APP_KEY를 확인해주세요.'
+        )
       } else if (kakaoState === 'missing_sdk') {
         setActionMessage('카카오 SDK를 불러오지 못했어요. 잠시 뒤 다시 시도해주세요.')
       } else if (kakaoState === 'init_failed') {
