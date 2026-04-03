@@ -14,6 +14,61 @@ const PERIOD_OPTIONS = [
 
 const DEFAULT_DAYS = 30
 const ALLOWED_PERIOD_DAYS = new Set(PERIOD_OPTIONS.map((option) => option.days))
+const FEEDBACK_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSdjVwQ8UH1s-Oc4szZ5N1Bej49aiMBBRPhOg7HxZngZcz4lpw/viewform?usp=publish-editor'
+const POLICY_MODAL_CONTENT = {
+  about: {
+    title: '서비스 소개',
+    sections: [
+      {
+        heading: '서비스 개요',
+        body: 'Git Insight는 공개 GitHub 활동 데이터를 바탕으로 최근 개발 활동 흐름을 읽기 쉽게 요약해 보여주는 서비스입니다.',
+      },
+      {
+        heading: '제공 내용',
+        body: '선택한 기간(7일, 30일, 90일, 6개월, 1년) 기준으로 이벤트 수, Push 활동, 활동 일수, 언어 분포, 이벤트 유형을 시각화해 제공합니다.',
+      },
+      {
+        heading: '데이터 출처',
+        body: '분석은 GitHub 공개 API 기반으로 수행되며, 비공개 저장소 활동은 포함되지 않을 수 있습니다.',
+      },
+    ],
+  },
+  privacy: {
+    title: '개인정보처리방침',
+    sections: [
+      {
+        heading: '수집 정보',
+        body: '서비스는 사용자가 입력한 GitHub 아이디를 분석 요청 처리 용도로만 사용하며, 별도 회원가입 정보나 민감정보를 직접 수집하지 않습니다.',
+      },
+      {
+        heading: '이용 목적',
+        body: '입력된 GitHub 아이디는 활동 분석 결과 생성 및 화면 제공을 위해서만 이용됩니다.',
+      },
+      {
+        heading: '제3자 통신',
+        body: '서비스 동작 과정에서 GitHub API 및 배포 인프라(예: Cloudflare, Render)와 통신이 발생할 수 있습니다.',
+      },
+    ],
+  },
+  terms: {
+    title: '이용약관',
+    sections: [
+      {
+        heading: '서비스 성격',
+        body: 'Git Insight는 공개 데이터를 기반으로 통계/요약 정보를 제공하는 참고용 도구입니다.',
+      },
+      {
+        heading: '면책',
+        body: '제공되는 정보는 외부 API 상태와 공개 데이터 범위에 영향을 받을 수 있으며, 최종 판단 전 추가 검토가 필요합니다.',
+      },
+      {
+        heading: '사용자 책임',
+        body: '사용자는 관련 법령과 플랫폼 정책을 준수해야 하며, 서비스 운영을 방해하는 행위를 해서는 안 됩니다.',
+      },
+    ],
+  },
+}
 const HOW_IT_WORKS_STEPS = [
   {
     step: 'Step 1',
@@ -73,6 +128,41 @@ function buildResultUrl(username, days) {
   return `/result${queryString ? `?${queryString}` : ''}`
 }
 
+function PolicyModal({ policy, onClose }) {
+  if (!policy) {
+    return null
+  }
+
+  return (
+    <div
+      className="policy-modal-backdrop"
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <section className="policy-modal" role="dialog" aria-modal="true" aria-label={policy.title}>
+        <div className="policy-modal-header">
+          <h2>{policy.title}</h2>
+          <button type="button" className="policy-modal-close" onClick={onClose}>
+            닫기
+          </button>
+        </div>
+        <div className="policy-modal-body">
+          {policy.sections.map((section) => (
+            <article key={section.heading} className="policy-modal-section">
+              <h3>{section.heading}</h3>
+              <p>{section.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function App() {
   const initialState = readSharedState()
   const initialStateRef = useRef(initialState)
@@ -84,8 +174,10 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [error, setError] = useState('')
+  const [policyModalKey, setPolicyModalKey] = useState('')
   const latestRequestRef = useRef('')
   const initialSearchDoneRef = useRef(false)
+  const activePolicy = policyModalKey ? POLICY_MODAL_CONTENT[policyModalKey] : null
 
   const syncFromLocation = () => {
     const nextRoute = readCurrentRoute()
@@ -111,6 +203,14 @@ function App() {
 
     window.history.pushState({}, '', '/')
     syncFromLocation()
+  }
+
+  const closePolicyModal = () => {
+    setPolicyModalKey('')
+  }
+
+  const openPolicyModal = (key) => {
+    setPolicyModalKey(key)
   }
 
   const navigateToResult = (nextUsername, nextDays, replace = false) => {
@@ -263,6 +363,28 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!activePolicy) {
+      return undefined
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closePolicyModal()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [activePolicy])
+
   if (route === 'result') {
     return (
       <main className="app-shell result-shell">
@@ -300,6 +422,31 @@ function App() {
             </div>
           )}
         </section>
+
+        <footer className="landing-footer result-footer">
+          <span className="landing-footer-line" aria-hidden="true" />
+          <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('about')}>
+              서비스 소개
+            </button>
+            <button
+              type="button"
+              className="footer-link-button"
+              onClick={() => openPolicyModal('privacy')}
+            >
+              개인정보처리방침
+            </button>
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('terms')}>
+              이용약관
+            </button>
+            <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
+              문의/오류 제보
+            </a>
+          </nav>
+          <p>© 2026 Git Insight. All Rights Reserved.</p>
+        </footer>
+
+        <PolicyModal policy={activePolicy} onClose={closePolicyModal} />
       </main>
     )
   }
@@ -349,9 +496,29 @@ function App() {
 
         <footer className="landing-footer">
           <span className="landing-footer-line" aria-hidden="true" />
+          <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('about')}>
+              서비스 소개
+            </button>
+            <button
+              type="button"
+              className="footer-link-button"
+              onClick={() => openPolicyModal('privacy')}
+            >
+              개인정보처리방침
+            </button>
+            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('terms')}>
+              이용약관
+            </button>
+            <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
+              문의/오류 제보
+            </a>
+          </nav>
           <p>© 2026 Git Insight. All Rights Reserved.</p>
         </footer>
       </section>
+
+      <PolicyModal policy={activePolicy} onClose={closePolicyModal} />
     </main>
   )
 }
