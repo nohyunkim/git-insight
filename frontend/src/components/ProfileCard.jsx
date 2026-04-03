@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityChart, LanguageChart } from './InsightCharts'
 
-const KAKAO_JAVASCRIPT_KEY = '376d342e159bd263e1645efea4abf0a1'
+const KAKAO_JAVASCRIPT_KEY = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY ?? ''
 
 function ShareIcon() {
   return (
@@ -129,7 +129,15 @@ function getCurrentShareUrl() {
   return window.location.href
 }
 
+function getSharePreviewImageUrl() {
+  return `${window.location.origin}/social-preview.png`
+}
+
 function ensureKakaoInitialized() {
+  if (!KAKAO_JAVASCRIPT_KEY) {
+    return false
+  }
+
   const kakao = window.Kakao
   if (!kakao) {
     return false
@@ -243,7 +251,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
       content: {
         title: `${username}님의 Git Insight 결과`,
         description: `${summaryLabel} GitHub 활동 요약을 확인해보세요.`,
-        imageUrl: 'https://git-insight.pages.dev/social-preview.png',
+        imageUrl: getSharePreviewImageUrl(),
         link: {
           mobileWebUrl: shareUrl,
           webUrl: shareUrl,
@@ -270,7 +278,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
     const encodedTitle = encodeURIComponent(title)
     const encodedText = encodeURIComponent(text)
 
-    return [
+    const links = [
       {
         id: 'twitter',
         label: 'X에 공유',
@@ -290,18 +298,23 @@ function ProfileCard({ userData, feedbackLoading = false }) {
         href: `https://api.whatsapp.com/send?text=${encodedText}%20${encodedUrl}`,
       },
       {
-        id: 'kakao',
-        label: '카카오톡 공유',
-        icon: <KakaoIcon />,
-        onClick: handleKakaoShare,
-      },
-      {
         id: 'linkedin',
         label: 'LinkedIn에 공유',
         icon: <LinkedInIcon />,
         href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
       },
     ]
+
+    if (KAKAO_JAVASCRIPT_KEY) {
+      links.splice(3, 0, {
+        id: 'kakao',
+        label: '카카오톡 공유',
+        icon: <KakaoIcon />,
+        onClick: handleKakaoShare,
+      })
+    }
+
+    return links
   }, [handleKakaoShare, summaryLabel, username])
 
   useEffect(() => {
@@ -330,6 +343,10 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   }, [])
 
   useEffect(() => {
+    if (!KAKAO_JAVASCRIPT_KEY) {
+      return
+    }
+
     ensureKakaoInitialized()
   }, [])
 

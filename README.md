@@ -227,6 +227,7 @@ npm run dev
 - `CACHE_TTL_SECONDS`
 - `FRONTEND_ORIGINS`
 - `VITE_API_BASE_URL`
+- `VITE_KAKAO_JAVASCRIPT_KEY` (프론트 카카오 공유 기능 사용 시)
 
 ## 배포 메모
 

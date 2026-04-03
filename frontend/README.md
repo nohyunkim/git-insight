@@ -1,16 +1,37 @@
-# React + Vite
+# Git Insight Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Git Insight 프론트엔드 프로젝트입니다. React + Vite 기반으로 구성되어 있습니다.
 
-Currently, two official plugins are available:
+## 로컬 실행
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. 의존성 설치
 
-## React Compiler
+   npm install
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. 개발 서버 실행
 
-## Expanding the ESLint configuration
+   npm run dev
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+기본 주소: http://localhost:5173
+
+## 빌드
+
+npm run build
+npm run preview
+
+## 환경 변수
+
+frontend/.env 또는 배포 환경에 아래 값을 설정하세요.
+
+- VITE_API_BASE_URL
+  - 예시: http://127.0.0.1:8000
+- VITE_KAKAO_JAVASCRIPT_KEY
+  - 카카오 공유 기능 사용 시 필요
+
+VITE_KAKAO_JAVASCRIPT_KEY가 없으면 카카오 공유 버튼은 표시되지 않습니다.
+
+## 주요 디렉터리
+
+- src/components: 화면 컴포넌트
+- src/api: 백엔드 API 호출
+- public: 파비콘/공유 이미지/웹 매니페스트
