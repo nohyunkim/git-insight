@@ -215,6 +215,18 @@ const CONTENT_LINKS = [
   },
 ]
 
+const LANDING_QUICK_POINTS = [
+  'Push 흐름',
+  '활동 일수',
+  '언어 분포',
+  '협업 흔적',
+]
+
+const EDITORIAL_TAGS = [
+  ['공개 기록', '포트폴리오'],
+  ['프로필', '이벤트'],
+]
+
 function delay(ms) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
@@ -660,13 +672,33 @@ function App() {
         </div>
 
         <div className="editorial-grid">
-          {LANDING_CONTENT_SECTIONS.slice(0, 2).map((section) => (
+          {LANDING_CONTENT_SECTIONS.slice(0, 2).map((section, index) => (
             <article key={section.title} className="editorial-card">
-              <p className="editorial-kicker">{section.kicker}</p>
+              <div className="editorial-kicker-row">
+                <span className="editorial-kicker-dot" aria-hidden="true" />
+                <p className="editorial-kicker">{section.kicker}</p>
+              </div>
               <h3>{section.title}</h3>
-              {section.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+              <p className="editorial-summary">
+                {index === 0
+                  ? '포트폴리오나 공개 프로필에서 보이는 최근 활동 인상을 빠르게 읽어줍니다.'
+                  : '공개 프로필, 저장소, 이벤트를 기준으로 최근 흐름을 기간별로 다시 집계합니다.'}
+              </p>
+              <ul className="editorial-points">
+                {(index === 0
+                  ? ['최근 활동의 톤과 꾸준함을 한 화면에서 훑어볼 수 있습니다.', '채용용 프로필이나 공개 포트폴리오 점검에 바로 활용할 수 있습니다.']
+                  : ['공개 프로필, 저장소, 이벤트를 기간 기준으로 다시 모아 비교합니다.', '비공개 저장소나 외부 협업 기록은 충분히 반영되지 않을 수 있습니다.']
+                ).map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+              <div className="editorial-tags">
+                {EDITORIAL_TAGS[index].map((tag) => (
+                  <span key={tag} className="editorial-tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </article>
           ))}
         </div>

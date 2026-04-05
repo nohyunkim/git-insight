@@ -378,7 +378,7 @@
 .content-link-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 18px;
   margin-top: 24px;
 }
 
@@ -396,11 +396,30 @@
 .editorial-card,
 .signal-card,
 .practical-card {
-  padding: 28px;
+  padding: 24px;
+}
+
+.editorial-card {
+  text-align: left;
+}
+
+.editorial-kicker-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.editorial-kicker-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8cbcff, #c5d8ff);
+  box-shadow: 0 0 0 6px rgba(140, 188, 255, 0.08);
 }
 
 .editorial-kicker {
-  margin: 0 0 12px;
+  margin: 0;
   color: #8bc8ff;
   font-size: 0.8rem;
   font-weight: 700;
@@ -429,15 +448,72 @@
   word-break: keep-all;
 }
 
+.editorial-summary {
+  max-width: 34ch;
+  margin: 0 0 14px !important;
+  color: #dce7f8 !important;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.6 !important;
+}
+
+.editorial-points {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-points li {
+  position: relative;
+  padding-left: 18px;
+  color: #aab9cf;
+  line-height: 1.68;
+  word-break: keep-all;
+}
+
+.editorial-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(140, 188, 255, 0.92);
+}
+
 .editorial-card p + p,
 .signal-card p + p,
 .practical-card p + p {
   margin-top: 12px;
 }
 
+.editorial-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.editorial-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(103, 129, 176, 0.34);
+  border-radius: 999px;
+  color: #cfe0f8;
+  background: rgba(20, 28, 45, 0.72);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .content-link-card {
   display: block;
-  padding: 22px;
+  padding: 20px 22px;
   border: 1px solid rgba(82, 99, 139, 0.26);
   border-radius: 20px;
   color: inherit;
@@ -460,15 +536,15 @@
   margin: 0 0 10px;
   color: #f1f6fc;
   word-break: keep-all;
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 .content-link-card p {
   margin: 0;
   color: #aab9cf;
-  line-height: 1.65;
+  line-height: 1.55;
   word-break: keep-all;
-  font-size: 0.96rem;
+  font-size: 0.92rem;
 }
 
 .landing-section-heading {
@@ -487,7 +563,7 @@
 .landing-section-heading h2 {
   margin: 0;
   color: #eff5fc;
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.7rem, 3.2vw, 2.6rem);
 }
 
 .landing-step-grid {
