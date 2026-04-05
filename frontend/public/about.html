@@ -9,16 +9,20 @@
     />
     <title>서비스 소개 | Git Insight</title>
     <style>
-      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; }
+      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
       .page-shell { width: min(960px, calc(100% - 36px)); margin: 32px auto 40px; }
       .brand-link { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; color: #eef4fb; text-decoration: none; font-size: 1.2rem; font-weight: 700; }
       .brand-link img { width: 44px; height: 44px; display: block; }
       main { padding: 28px; border: 1px solid #334155; border-radius: 18px; background: #111827; }
       h1, h2 { margin-top: 0; color: #f8fafc; word-break: keep-all; }
-      section { margin-top: 20px; padding: 20px; border: 1px solid #334155; border-radius: 14px; background: #182033; }
+      section { margin-top: 18px; padding: 18px 20px; border: 1px solid #334155; border-radius: 14px; background: #182033; }
       p { margin: 0; word-break: keep-all; }
-      p + p { margin-top: 12px; }
+      p + p { margin-top: 10px; }
+      ul { margin: 0; padding-left: 18px; }
+      li + li { margin-top: 8px; }
       .kicker { margin-bottom: 10px; color: #8bc8ff; font-size: 0.84rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+      .summary-box { margin-top: 18px; padding: 18px 20px; border: 1px solid rgba(139, 200, 255, 0.24); border-radius: 14px; background: rgba(20, 34, 56, 0.76); }
+      .summary-box strong { display: block; margin-bottom: 10px; color: #f8fafc; }
     </style>
   </head>
   <body>
@@ -31,50 +35,36 @@
         <p class="kicker">About</p>
         <h1>Git Insight는 어떤 서비스인가요?</h1>
         <p>
-          Git Insight는 공개 GitHub 활동을 한 화면에서 읽기 쉽게 정리해 주는 분석 서비스입니다. GitHub
-          아이디와 기간을 선택하면 최근 공개 활동의 흐름, 언어 분포, 이벤트 비중, 그리고 다음에 어떤 부분을
-          보완하면 좋을지를 요약해서 보여줍니다.
+          Git Insight는 공개 GitHub 활동을 읽기 쉽게 정리해 주는 분석 서비스입니다. GitHub 아이디와 기간을
+          선택하면 최근 활동 흐름, 언어 분포, 이벤트 비중을 한 화면에서 확인할 수 있습니다.
         </p>
-        <p>
-          이 서비스는 누군가를 점수화하기 위한 평가 도구라기보다, 공개 기록이 어떻게 보이는지 점검하는 참고
-          화면에 가깝습니다. 포트폴리오를 정리하거나 프로필을 다듬고 싶은 사람에게 특히 유용하도록 구성했습니다.
-        </p>
+        <div class="summary-box">
+          <strong>핵심만 보기</strong>
+          <ul>
+            <li>공개 GitHub 활동을 빠르게 점검하는 참고 화면에 가깝습니다.</li>
+            <li>공개 프로필, 공개 저장소, 공개 이벤트 데이터를 바탕으로 동작합니다.</li>
+            <li>포트폴리오를 정리하거나 프로필 인상을 점검할 때 특히 유용합니다.</li>
+          </ul>
+        </div>
         <section>
           <h2>왜 GitHub 활동을 읽는 일이 중요할까요?</h2>
           <p>
-            공개 GitHub 활동은 작업 결과물뿐 아니라 과정의 흔적도 함께 드러냅니다. 어떤 언어와 저장소가 주로
-            보이는지, 최근 작업이 여러 날에 걸쳐 이어졌는지, 협업 기록이 남아 있는지에 따라 외부에서 받는
-            인상도 달라질 수 있습니다.
-          </p>
-          <p>
-            특히 취업 준비나 공개 포트폴리오 관리 관점에서는 완성된 결과물만큼이나 작업 흐름이 중요하게
-            읽히는 경우가 많습니다. Git Insight는 그 흐름을 빠르게 확인할 수 있도록 돕는 데 초점을 맞춥니다.
+            공개 GitHub 활동은 결과물뿐 아니라 작업 흐름도 함께 드러냅니다. 어떤 기술이 보이는지, 최근 작업이
+            이어지고 있는지, 협업 흔적이 남아 있는지에 따라 외부에서 받는 인상도 달라질 수 있습니다.
           </p>
         </section>
         <section>
           <h2>어떤 데이터를 바탕으로 결과를 제공하나요?</h2>
           <p>
-            Git Insight는 GitHub 공개 API를 통해 공개 프로필, 공개 저장소, 공개 이벤트 정보를 조회합니다.
-            선택한 기간에 맞춰 최근 이벤트를 다시 집계하고, Push 이벤트 비율, 활동 일수, 언어 분포, 이벤트
-            유형 등을 하나의 화면에 정리해서 보여줍니다.
-          </p>
-          <p>
-            이 정보는 공개 범위 안에서만 수집되므로, 비공개 저장소 활동이나 조직 내부 작업 기록까지 완전히
-            포함되지는 않습니다. 따라서 결과는 절대 평가보다는 공개 활동 패턴을 읽기 위한 참고 자료로 보는 편이
-            적절합니다.
+            GitHub 공개 API를 통해 공개 프로필, 공개 저장소, 공개 이벤트 정보를 조회하고, 선택한 기간 기준으로
+            다시 집계해 보여 줍니다. 비공개 저장소나 조직 내부 작업까지 완전히 포함되지는 않습니다.
           </p>
         </section>
         <section>
           <h2>어떤 사람에게 특히 유용한가요?</h2>
           <p>
-            자신의 GitHub 프로필이 외부에서 어떻게 보이는지 빠르게 점검하고 싶은 개발자에게 가장 잘 맞습니다.
-            포트폴리오 준비 중인 사람, 공개 저장소를 정리하고 싶은 사람, 최근 활동 흐름을 스스로 돌아보고 싶은
-            사람에게 실용적인 힌트를 줄 수 있습니다.
-          </p>
-          <p>
-            또한 결과를 바탕으로 README를 보완하거나 대표 저장소를 다시 정리하는 등 다음 액션을 생각해 볼
-            때도 유용합니다. 단순히 숫자를 보여 주는 데서 끝나지 않고, 공개 프로필을 더 설득력 있게 만드는 데
-            도움이 되는 방향을 제안하는 것이 이 서비스의 목표입니다.
+            자신의 GitHub 프로필이 어떻게 보이는지 빠르게 확인하고 싶은 개발자에게 잘 맞습니다. 포트폴리오를
+            준비하거나 공개 저장소를 정리할 때 특히 실용적인 힌트를 줄 수 있습니다.
           </p>
         </section>
       </main>

@@ -612,9 +612,6 @@ function App() {
             <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
               문의/오류 제보
             </a>
-            <a href="/guide.html">해석 가이드</a>
-            <a href="/github-portfolio-guide.html">포트폴리오 가이드</a>
-            <a href="/readme-writing-guide.html">README 가이드</a>
           </nav>
           <p>© 2026 Git Insight. All Rights Reserved.</p>
         </footer>
