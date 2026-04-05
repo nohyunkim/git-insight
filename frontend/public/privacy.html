@@ -1,58 +1,33 @@
-    <!doctype html>
-    <html lang="ko">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Git Insight 개인정보처리방침" />
-        <title>개인정보처리방침 | Git Insight</title>
-        <style>
-        body {
-            margin: 0;
-            font-family: "Segoe UI", "Noto Sans KR", sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            line-height: 1.7;
-        }
-        main {
-            width: min(860px, calc(100% - 36px));
-            margin: 40px auto;
-            padding: 24px;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            background: #111827;
-        }
-        h1,
-        h2 {
-            margin-top: 0;
-            color: #f8fafc;
-        }
-        a {
-            color: #93c5fd;
-        }
-        </style>
-    </head>
-    <body>
-        <main>
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Git Insight 개인정보처리방침" />
+    <title>개인정보처리방침 | Git Insight</title>
+    <style>
+      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
+      .page-shell { width: min(860px, calc(100% - 36px)); margin: 32px auto 40px; }
+      .brand-link { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; color: #eef4fb; text-decoration: none; font-size: 1.2rem; font-weight: 700; }
+      .brand-link img { width: 44px; height: 44px; display: block; }
+      main { padding: 24px; border: 1px solid #334155; border-radius: 16px; background: #111827; }
+      h1, h2 { margin-top: 0; color: #f8fafc; }
+      p { margin: 0; }
+      p + p { margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <a class="brand-link" href="/" aria-label="Git Insight 메인으로 이동">
+        <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
+        <span>Git Insight</span>
+      </a>
+      <main>
         <h1>개인정보처리방침</h1>
         <p>Git Insight는 서비스 운영에 필요한 최소한의 정보만 처리합니다.</p>
-
         <h2>수집하는 정보</h2>
-        <p>
-            Git Insight는 사용자가 입력한 GitHub 아이디를 기준으로 공개 API 조회를 수행합니다.
-            별도의 회원가입 정보나 민감 개인정보를 직접 수집하지 않습니다.
-        </p>
-
-        <h2>정보 이용 목적</h2>
-        <p>
-            입력된 GitHub 아이디는 활동 분석 결과를 생성하기 위한 목적으로만 사용됩니다.
-        </p>
-
-        <h2>제3자 제공</h2>
-        <p>
-            서비스 동작을 위해 GitHub API 및 배포 인프라 제공자(예: Cloudflare, Render)와 통신이 발생할 수 있습니다.
-        </p>
-
-        <p><a href="/">메인으로 돌아가기</a></p>
-        </main>
-    </body>
-    </html>
+        <p>Git Insight는 사용자가 입력한 GitHub 아이디를 기준으로 공개 API 조회를 수행합니다. 별도의 회원가입 정보나 민감한 개인정보를 직접 수집하지 않습니다.</p>
+      </main>
+    </div>
+  </body>
+</html>

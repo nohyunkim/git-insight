@@ -1,59 +1,48 @@
-    <!doctype html>
-    <html lang="ko">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta
-        name="description"
-        content="Git Insight 서비스 소개 페이지입니다. 데이터 수집 범위와 활용 목적, 문의 채널을 확인할 수 있습니다."
-        />
-        <title>서비스 소개 | Git Insight</title>
-        <style>
-        body {
-            margin: 0;
-            font-family: "Segoe UI", "Noto Sans KR", sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            line-height: 1.7;
-        }
-        main {
-            width: min(860px, calc(100% - 36px));
-            margin: 40px auto;
-            padding: 24px;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            background: #111827;
-        }
-        h1,
-        h2 {
-            margin-top: 0;
-            color: #f8fafc;
-        }
-        a {
-            color: #93c5fd;
-        }
-        </style>
-    </head>
-    <body>
-        <main>
-        <h1>Git Insight 서비스 소개</h1>
-        <p>
-            Git Insight는 공개 GitHub 활동 데이터를 기반으로 최근 개발 활동을 요약해 보여주는 웹 서비스입니다.
-        </p>
-
-        <h2>무엇을 제공하나요?</h2>
-        <p>
-            선택한 기간(7일, 30일, 90일, 6개월, 1년) 기준으로 이벤트 수, Push 활동, 활동 일수, 언어 분포, 이벤트 유형을
-            시각화하고 해석 가이드를 제공합니다.
-        </p>
-
-        <h2>데이터 출처</h2>
-        <p>
-            본 서비스는 GitHub의 공개 API를 사용하여 공개 프로필/공개 저장소/공개 이벤트를 조회합니다.
-            비공개 저장소 활동은 포함되지 않을 수 있습니다.
-        </p>
-
-        <p><a href="/">메인으로 돌아가기</a></p>
-        </main>
-    </body>
-    </html>
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Git Insight 서비스 소개. 왜 GitHub 공개 활동을 읽는 것이 중요한지, 어떤 데이터를 바탕으로 결과를 제공하는지, 누구에게 유용한지 자세히 설명합니다."
+    />
+    <title>서비스 소개 | Git Insight</title>
+    <style>
+      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.8; }
+      .page-shell { width: min(960px, calc(100% - 36px)); margin: 32px auto 40px; }
+      .brand-link { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; color: #eef4fb; text-decoration: none; font-size: 1.2rem; font-weight: 700; }
+      .brand-link img { width: 44px; height: 44px; display: block; }
+      main { padding: 28px; border: 1px solid #334155; border-radius: 18px; background: #111827; }
+      h1, h2 { margin-top: 0; color: #f8fafc; word-break: keep-all; }
+      section { margin-top: 20px; padding: 20px; border: 1px solid #334155; border-radius: 14px; background: #182033; }
+      p { margin: 0; }
+      p + p { margin-top: 12px; }
+      .kicker { margin-bottom: 10px; color: #8bc8ff; font-size: 0.84rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <a class="brand-link" href="/" aria-label="Git Insight 메인으로 이동">
+        <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
+        <span>Git Insight</span>
+      </a>
+      <main>
+        <p class="kicker">About</p>
+        <h1>Git Insight는 어떤 서비스인가요?</h1>
+        <p>Git Insight는 공개 GitHub 활동을 한눈에 읽을 수 있도록 정리해주는 분석 서비스입니다. GitHub 아이디와 기간을 선택하면 최근 공개 활동의 패턴, 언어 분포, 이벤트 흐름, 그리고 다음에 무엇을 보강하면 좋을지에 대한 해석형 요약을 함께 제공합니다.</p>
+        <p>이 서비스는 누군가를 점수화하기 위한 도구보다, 공개 기록이 어떤 인상으로 보이는지 점검하는 참고 화면에 더 가깝습니다. 특히 포트폴리오를 준비하거나 GitHub 프로필을 정리하려는 사람에게 실질적인 점검 포인트를 빠르게 보여주는 데 초점을 맞추고 있습니다.</p>
+        <section>
+          <h2>왜 GitHub 활동을 읽는 일이 중요할까요?</h2>
+          <p>개발자의 실력을 판단하는 기준은 다양하지만, 공개 GitHub 활동은 작업의 흐름과 습관을 보여주는 몇 안 되는 공개 기록입니다. 어떤 언어와 저장소가 주로 보이는지, 최근 작업이 얼마나 이어졌는지, 협업 흔적이 남아 있는지에 따라 외부에서 받는 인상이 달라질 수 있습니다.</p>
+          <p>완성된 프로젝트만 보는 것보다 그 과정의 기록까지 함께 읽으면 훨씬 풍부한 해석이 가능합니다. Git Insight는 이 지점을 빠르게 정리해서 보여주기 위해 만들어졌습니다.</p>
+        </section>
+        <section>
+          <h2>어떤 데이터를 바탕으로 결과를 제공하나요?</h2>
+          <p>Git Insight는 GitHub 공개 API를 통해 공개 프로필, 공개 저장소, 공개 이벤트 정보를 조회합니다. 선택한 기간에 맞춰 최근 이벤트를 다시 집계하고, Push 이벤트 수, 활동 일수, 이벤트 유형, 언어 분포를 요약해 결과 화면에 표시합니다.</p>
+          <p>다만 비공개 저장소 활동, 조직 내부 작업, 외부 문서 협업, 로컬 개발 이력은 포함되지 않을 수 있습니다. 그래서 결과는 절대적인 판단보다 공개 활동 패턴을 읽기 위한 참고용으로 활용하는 것이 가장 적절합니다.</p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

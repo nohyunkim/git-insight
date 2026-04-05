@@ -6,82 +6,27 @@
     <meta name="description" content="Git Insight 자주 묻는 질문(FAQ)" />
     <title>자주 묻는 질문 | Git Insight</title>
     <style>
-      body {
-        margin: 0;
-        font-family: "Segoe UI", "Noto Sans KR", sans-serif;
-        background: #0f172a;
-        color: #e2e8f0;
-        line-height: 1.7;
-      }
-      main {
-        width: min(920px, calc(100% - 36px));
-        margin: 40px auto;
-        padding: 24px;
-        border: 1px solid #334155;
-        border-radius: 16px;
-        background: #111827;
-      }
-      h1,
-      h2 {
-        margin-top: 0;
-        color: #f8fafc;
-      }
-      article {
-        margin-top: 16px;
-        padding: 16px;
-        border: 1px solid #334155;
-        border-radius: 12px;
-        background: #182033;
-      }
-      a {
-        color: #93c5fd;
-      }
+      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
+      .page-shell { width: min(920px, calc(100% - 36px)); margin: 32px auto 40px; }
+      .brand-link { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; color: #eef4fb; text-decoration: none; font-size: 1.2rem; font-weight: 700; }
+      .brand-link img { width: 44px; height: 44px; display: block; }
+      main { padding: 24px; border: 1px solid #334155; border-radius: 16px; background: #111827; }
+      h1, h2 { margin-top: 0; color: #f8fafc; }
+      article { margin-top: 16px; padding: 16px; border: 1px solid #334155; border-radius: 12px; background: #182033; }
+      p { margin: 0; }
     </style>
   </head>
   <body>
-    <main>
-      <h1>자주 묻는 질문(FAQ)</h1>
-
-      <article>
-        <h2>왜 private 저장소 활동이 적게 보이나요?</h2>
-        <p>
-          Git Insight는 GitHub 공개 API 기반 분석 도구입니다. private 저장소의 세부 활동은 공개 범위 제한으로 인해
-          결과에 반영되지 않거나 축소되어 보일 수 있습니다.
-        </p>
-      </article>
-
-      <article>
-        <h2>기간을 바꾸면 결과가 왜 크게 달라지나요?</h2>
-        <p>
-          7일, 30일, 90일, 6개월, 1년은 서로 다른 집계 창(window)입니다. 기간이 길어질수록 누적 이벤트가 증가하고,
-          활동 패턴도 달라 보일 수 있습니다.
-        </p>
-      </article>
-
-      <article>
-        <h2>같은 계정인데 잠시 후 숫자가 달라질 수 있나요?</h2>
-        <p>
-          가능합니다. GitHub API 응답 타이밍, 캐시 만료 시점, 공개 이벤트 반영 시차에 따라 수치가 일부 변동될 수 있습니다.
-        </p>
-      </article>
-
-      <article>
-        <h2>결과 공유는 어떻게 하나요?</h2>
-        <p>
-          결과 화면의 공유/저장 메뉴에서 링크 복사, PNG 저장, PDF 저장을 사용할 수 있습니다.
-          링크에는 조회한 아이디와 기간 정보가 포함됩니다.
-        </p>
-      </article>
-
-      <article>
-        <h2>오류나 개선 요청은 어디로 보내면 되나요?</h2>
-        <p>
-          메인/결과 화면 하단의 문의/오류 제보 링크를 통해 접수할 수 있습니다.
-          재현 정보(아이디, 기간, 캡처)를 함께 보내주시면 확인이 빨라집니다.
-        </p>
-      </article>
-
-      <p><a href="/">메인으로 돌아가기</a></p>
-    </main>
+    <div class="page-shell">
+      <a class="brand-link" href="/" aria-label="Git Insight 메인으로 이동">
+        <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
+        <span>Git Insight</span>
+      </a>
+      <main>
+        <h1>자주 묻는 질문(FAQ)</h1>
+        <article><h2>비공개 저장소 활동도 보이나요?</h2><p>Git Insight는 GitHub 공개 API 기반 분석 도구입니다. private 저장소의 활동은 공개 범위 제한으로 인해 결과에 충분히 반영되지 않거나 축소되어 보일 수 있습니다.</p></article>
+        <article><h2>기간을 바꾸면 결과가 왜 달라지나요?</h2><p>7일, 30일, 90일, 6개월, 1년은 서로 다른 집계 창입니다. 기간이 길어질수록 누적 이벤트가 증가하고 활동 패턴도 다르게 보일 수 있습니다.</p></article>
+      </main>
+    </div>
   </body>
 </html>

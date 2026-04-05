@@ -236,6 +236,27 @@ function buildWindowLabel(summary) {
   return `최근 ${days}일`
 }
 
+function buildInterpretationNotes(summaryLabel) {
+  return [
+    {
+      title: '이 결과는 어떻게 계산되나요?',
+      body: `${summaryLabel} 동안의 공개 이벤트와 공개 저장소 정보를 기준으로 활동량, Push 수, 활동 일수, 언어 분포를 다시 집계합니다. 빠르게 읽기 좋은 형태로 요약한 값이기 때문에 실제 저장소 내용과 함께 보면 더 정확합니다.`,
+    },
+    {
+      title: 'Push 수가 높다고 무조건 좋은가요?',
+      body: 'Push 수는 코드 반영 빈도를 보여주지만, 품질이나 협업 수준을 단독으로 판단해주지는 않습니다. 이슈 정리, PR 설명, README 관리처럼 화면에 바로 드러나지 않는 요소도 함께 봐야 전체 맥락이 읽힙니다.',
+    },
+    {
+      title: '활동 일수는 왜 중요할까요?',
+      body: '비슷한 이벤트 수라도 여러 날짜에 나뉘어 있으면 꾸준한 개발 리듬으로 읽히고, 짧은 구간에 몰려 있으면 스프린트형 작업 패턴으로 보일 수 있습니다. 포트폴리오 관점에서는 이런 리듬 정보가 꽤 중요한 인상을 남깁니다.',
+    },
+    {
+      title: '언어 분포를 볼 때 주의할 점',
+      body: '언어 분포는 공개 저장소 기준이라 실제 실무 전체 스택과 다를 수 있습니다. 비공개 프로젝트나 실험용 레포가 빠져 있으면 현재 역량보다 좁게 보일 수 있으니, README와 프로젝트 설명으로 보완하는 편이 좋습니다.',
+    },
+  ]
+}
+
 function ProfileCard({ userData, feedbackLoading = false }) {
   const { profile, stats, username, feedback, feedback_source: feedbackSource } = userData
   const [actionMessage, setActionMessage] = useState('')
@@ -254,6 +275,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
     active_days_30d: 0,
   }
   const summaryLabel = buildWindowLabel(summary)
+  const interpretationNotes = buildInterpretationNotes(summaryLabel)
   const strengthText =
     feedback?.strength ?? '활동 흐름을 바탕으로 강점을 정리하고 있습니다.'
   const improvementText =
@@ -541,6 +563,26 @@ function ProfileCard({ userData, feedbackLoading = false }) {
           </section>
         </div>
       </article>
+
+      <section className="result-editorial" aria-labelledby="result-editorial-title">
+        <div className="result-editorial-header">
+          <p className="editorial-kicker">Reading Guide</p>
+          <h3 id="result-editorial-title">결과를 해석할 때 같이 보면 좋은 설명</h3>
+          <p>
+            이 화면은 공개 GitHub 활동을 빠르게 읽도록 요약한 결과입니다. 숫자만 보기보다 아래 설명과 함께 보면 현재 기록이
+            어떤 인상으로 보이는지 더 쉽게 판단할 수 있습니다.
+          </p>
+        </div>
+
+        <div className="result-editorial-grid">
+          {interpretationNotes.map((item) => (
+            <article key={item.title} className="result-editorial-card">
+              <h4>{item.title}</h4>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <div className="result-actions">
         <div className="result-actions-copy">

@@ -157,6 +157,64 @@ const HOW_IT_WORKS_STEPS = [
   },
 ]
 
+const LANDING_CONTENT_SECTIONS = [
+  {
+    kicker: 'Why It Matters',
+    title: 'GitHub 활동 분석이 중요한 이유',
+    paragraphs: [
+      'GitHub 활동은 단순히 커밋 숫자를 보여주는 기록이 아니라, 어떤 주제로 작업하고 어떤 리듬으로 개발을 이어가는지를 드러내는 공개 흔적입니다. 누군가 포트폴리오를 읽을 때도 완성된 결과물만큼이나 과정의 밀도와 꾸준함을 함께 보게 되는 경우가 많습니다.',
+      'Git Insight는 공개 GitHub 데이터를 바탕으로 최근 활동 패턴을 빠르게 읽을 수 있도록 정리합니다. 특정 기간에 활동이 집중됐는지, 여러 날에 걸쳐 이어졌는지, 어떤 언어와 이벤트가 중심인지 한 화면에서 파악할 수 있게 만드는 것이 목표입니다.',
+    ],
+  },
+  {
+    kicker: 'What We Read',
+    title: '이 서비스가 읽는 데이터',
+    paragraphs: [
+      '분석에는 공개 프로필, 공개 저장소, 공개 이벤트 정보가 사용됩니다. 기간을 7일, 30일, 90일, 6개월, 1년으로 바꿔가며 계산할 수 있기 때문에 짧은 집중 구간과 장기적인 패턴을 비교해 보기 좋습니다.',
+      '다만 비공개 저장소 활동, 조직 내부 작업, 외부 협업 도구에서 이뤄진 기록은 충분히 반영되지 않을 수 있습니다. 그래서 결과는 절대적인 평가라기보다, 공개 활동 패턴을 읽기 위한 참고 자료로 해석하는 편이 더 적절합니다.',
+    ],
+  },
+  {
+    kicker: 'How To Interpret',
+    title: '지표를 읽는 기본 방법',
+    paragraphs: [
+      'Push 이벤트 수가 높으면 코드 반영이 활발하다는 신호일 수 있지만, 그것만으로 품질을 뜻하지는 않습니다. 활동 일수는 개발 리듬을 읽는 데 유용하고, 언어 분포는 현재 공개 저장소 기준으로 어떤 기술 축이 보이는지를 알려줍니다.',
+      '이벤트 유형 분포는 코드 작성 외에도 이슈 관리, PR 정리, 협업 흔적이 얼마나 드러나는지를 보여줍니다. 하나의 숫자만 보기보다 여러 지표를 함께 보는 편이 훨씬 더 정확한 해석으로 이어집니다.',
+    ],
+  },
+  {
+    kicker: 'How To Use',
+    title: '이 결과를 어디에 활용할 수 있나요?',
+    paragraphs: [
+      '개발자는 최근 GitHub 활동이 외부에서 어떻게 보일지 점검할 수 있고, 취업이나 포트폴리오 준비 중이라면 공개 이력에서 강점과 빈약한 지점을 빠르게 찾을 수 있습니다. 팀 프로젝트를 운영하는 경우에도 기록이 지나치게 산발적인지, 한 프로젝트에 설득력 있게 모여 있는지 확인하는 데 도움이 됩니다.',
+      '특히 README 정리, 커밋 메시지 정돈, 공개 저장소 설명 보강 같은 후속 액션과 함께 보면 결과가 더 유용해집니다. 숫자를 보는 데서 끝나지 않고 다음에 무엇을 바꾸면 좋을지 연결하는 것이 Git Insight의 핵심 가치입니다.',
+    ],
+  },
+]
+
+const CONTENT_LINKS = [
+  {
+    href: '/guide.html',
+    title: '분석 해석 가이드',
+    description: '결과 화면의 숫자와 차트를 어떤 기준으로 읽으면 좋은지 정리한 안내입니다.',
+  },
+  {
+    href: '/github-portfolio-guide.html',
+    title: '좋은 GitHub 포트폴리오 만드는 법',
+    description: '공개 저장소 구성, README, 활동 흐름을 어떻게 정리하면 더 설득력 있게 보이는지 설명합니다.',
+  },
+  {
+    href: '/readme-writing-guide.html',
+    title: 'README 잘 쓰는 법',
+    description: '프로젝트 목적, 주요 기능, 기술 선택 이유, 실행 방법을 어떻게 문서화하면 좋은지 다룹니다.',
+  },
+  {
+    href: '/github-activity-interpretation.html',
+    title: 'GitHub 활동 기록 해석법',
+    description: '활동량, 꾸준함, 협업 흔적을 어떤 맥락으로 봐야 하는지 차분하게 설명한 글입니다.',
+  },
+]
+
 function delay(ms) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
@@ -542,6 +600,9 @@ function App() {
             <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
               문의/오류 제보
             </a>
+            <a href="/guide.html">해석 가이드</a>
+            <a href="/github-portfolio-guide.html">포트폴리오 가이드</a>
+            <a href="/readme-writing-guide.html">README 가이드</a>
           </nav>
           <p>© 2026 Git Insight. All Rights Reserved.</p>
         </footer>
@@ -595,6 +656,32 @@ function App() {
               <h3>{item.title}</h3>
               <p>{item.description}</p>
             </article>
+          ))}
+        </div>
+
+        <div className="editorial-grid">
+          {LANDING_CONTENT_SECTIONS.slice(0, 2).map((section) => (
+            <article key={section.title} className="editorial-card">
+              <p className="editorial-kicker">{section.kicker}</p>
+              <h3>{section.title}</h3>
+              {section.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </article>
+          ))}
+        </div>
+
+        <div className="landing-section-heading editorial-heading">
+          <p className="landing-section-kicker">More To Read</p>
+          <h2>함께 보면 좋은 읽을거리</h2>
+        </div>
+
+        <div className="content-link-grid">
+          {CONTENT_LINKS.map((item) => (
+            <a key={item.href} href={item.href} className="content-link-card">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+            </a>
           ))}
         </div>
 
