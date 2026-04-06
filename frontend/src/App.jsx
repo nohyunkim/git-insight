@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
+import { deleteSavedResult, fetchSavedResults, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges } from './lib/supabase'
+import { AuthMenu } from './components/AuthMenu'
+import { MyPage } from './components/MyPage'
 import { ProfileCard } from './components/ProfileCard'
 import { SearchForm } from './components/SearchForm'
 import './App.css'
@@ -16,29 +19,35 @@ const DEFAULT_DAYS = 30
 const ALLOWED_PERIOD_DAYS = new Set(PERIOD_OPTIONS.map((option) => option.days))
 const FEEDBACK_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSdjVwQ8UH1s-Oc4szZ5N1Bej49aiMBBRPhOg7HxZngZcz4lpw/viewform?usp=publish-editor'
+
 const POLICY_MODAL_CONTENT = {
-  guide: {
-    title: '지표 해석 가이드',
+  about: {
+    title: '서비스 소개',
     sections: [
       {
-        heading: '이벤트 수',
-        body: '선택한 기간 동안 발생한 공개 이벤트 총합입니다. 전체 활동량을 가장 넓게 보여주는 기준 지표이며, 기간을 바꿔 추세 변화를 비교하는 데 적합합니다.',
+        heading: 'Git Insight는 무엇인가요?',
+        body: 'Git Insight는 공개 GitHub 활동을 바탕으로 활동 흐름, 언어 분포, 이벤트 패턴을 요약해서 보여주는 분석 서비스입니다.',
       },
       {
-        heading: 'Push 수',
-        body: '코드 반영 빈도에 가까운 지표입니다. 이벤트 수 대비 Push 비율이 높으면 구현 중심 활동, 낮으면 이슈/리뷰/협업 비중이 큰 활동일 가능성이 있습니다.',
+        heading: '이번 회원 기능에서 무엇이 달라지나요?',
+        body: 'Google 로그인 이후 결과 저장, 마이페이지 조회, 이후 결과 비교와 성장 피드백까지 확장할 수 있는 뼈대를 먼저 만드는 단계입니다.',
+      },
+    ],
+  },
+  guide: {
+    title: '결과 해석 가이드',
+    sections: [
+      {
+        heading: 'Push 이벤트',
+        body: 'Push 이벤트는 코드 반영 빈도를 보여주지만, 품질이나 협업 수준을 단독으로 판단해주지는 않습니다.',
       },
       {
         heading: '활동 일수',
-        body: '기간 내 실제 활동이 발생한 날짜 수입니다. 같은 이벤트 수라도 활동 일수가 높으면 분산형, 낮으면 특정 구간 집중형 패턴으로 해석할 수 있습니다.',
+        body: '여러 날짜에 걸쳐 활동이 분산되어 있으면 꾸준한 개발 리듬으로 읽히고, 특정 시기에 몰리면 스프린트형 패턴으로 보일 수 있습니다.',
       },
       {
         heading: '언어 분포',
-        body: '공개 레포지토리 기준 상위 언어입니다. 최근 이벤트 유형과 함께 보면 현재 집중 기술 스택을 해석하기 쉽지만, 비공개 저장소 기반 작업은 충분히 반영되지 않을 수 있습니다.',
-      },
-      {
-        heading: '해석 시 주의사항',
-        body: '본 결과는 참고용 요약 지표입니다. API 응답 시차, 공개 설정, 기간 선택에 따라 수치가 달라질 수 있으므로 중요한 판단 전 원본 활동 내역을 함께 확인하세요.',
+        body: '언어 분포는 공개 저장소 기준이라 실제 실무 전체 스택과 다를 수 있으므로 README와 프로젝트 설명을 함께 보는 편이 좋습니다.',
       },
     ],
   },
@@ -46,114 +55,58 @@ const POLICY_MODAL_CONTENT = {
     title: '자주 묻는 질문',
     sections: [
       {
-        heading: '왜 비공개 저장소 활동은 적게 보이나요?',
-        body: '분석은 GitHub 공개 API 기준으로 수행되므로 비공개 저장소의 세부 활동은 포함되지 않거나 제한적으로 반영될 수 있습니다.',
+        heading: '비공개 저장소도 포함되나요?',
+        body: '아니요. 현재 분석은 GitHub 공개 API 기준으로만 동작합니다.',
       },
       {
-        heading: '기간별 수치가 크게 달라지는 이유는?',
-        body: '7일, 30일, 90일, 6개월, 1년은 서로 다른 집계 창(window)이라 기간이 달라지면 이벤트 집계 범위도 달라집니다.',
-      },
-      {
-        heading: '결과 공유는 어떻게 하나요?',
-        body: '결과 화면의 공유/저장 메뉴에서 링크 복사, 이미지 저장, PDF 저장을 사용할 수 있으며 링크에 아이디/기간이 포함됩니다.',
-      },
-      {
-        heading: '결과가 이전과 다르게 보일 수 있나요?',
-        body: '가능합니다. GitHub 데이터 반영 시점, 캐시 만료 시점, 공개 이벤트 업데이트 타이밍에 따라 일부 수치는 일시적으로 변동될 수 있습니다.',
-      },
-    ],
-  },
-  about: {
-    title: '서비스 소개',
-    sections: [
-      {
-        heading: '서비스 개요',
-        body: 'Git Insight는 공개 GitHub 활동 데이터를 바탕으로 최근 개발 활동 흐름을 읽기 쉽게 요약해 보여주는 분석 서비스입니다.',
-      },
-      {
-        heading: '제공 내용',
-        body: '선택한 기간(7일, 30일, 90일, 6개월, 1년) 기준으로 이벤트 수, Push 활동, 활동 일수, 언어 분포, 이벤트 유형을 집계하고 시각화해 제공합니다.',
-      },
-      {
-        heading: '데이터 범위',
-        body: '분석은 GitHub 공개 API 기반으로 수행되며, 비공개 저장소 활동이나 계정 비공개 설정 데이터는 포함되지 않거나 제한적으로 반영될 수 있습니다.',
-      },
-      {
-        heading: '문의 채널',
-        body: '오류 제보, 개선 제안, 정책 관련 문의는 하단 문의/오류 제보 링크를 통해 접수할 수 있습니다.',
+        heading: '저장한 결과는 어디서 보나요?',
+        body: '로그인 후 우측 상단 프로필 메뉴에서 마이페이지로 이동하면 저장된 분석 기록 목록을 확인할 수 있습니다.',
       },
     ],
   },
   privacy: {
-    title: '개인정보처리방침',
+    title: '개인정보 처리 안내',
     sections: [
       {
-        heading: '수집 항목',
-        body: '서비스는 분석 요청 시 사용자가 입력한 GitHub 아이디를 처리합니다. 별도 회원가입 정보나 민감정보를 직접 수집하지 않습니다.',
+        heading: '어떤 정보를 다루나요?',
+        body: '로그인 시에는 Google 계정 기반의 Supabase Auth 세션이 사용되며, 분석 요청 시에는 사용자가 입력한 GitHub ID와 저장한 결과 스냅샷이 저장될 수 있습니다.',
       },
       {
-        heading: '처리 목적',
-        body: '입력된 GitHub 아이디는 활동 분석 결과 생성, 화면 표시, 오류 대응을 위한 기술적 검증 목적으로만 사용됩니다.',
-      },
-      {
-        heading: '보유 및 이용 기간',
-        body: '입력값은 요청 처리 과정에서 일시적으로 사용되며, 서비스 운영 정책에 따라 필요한 최소 기간 동안만 보관됩니다.',
-      },
-      {
-        heading: '제3자 제공 및 처리 위탁',
-        body: '서비스 동작 과정에서 GitHub API 및 배포 인프라(예: Cloudflare, Render)와 통신이 발생할 수 있으며, 해당 플랫폼의 정책이 함께 적용될 수 있습니다.',
-      },
-      {
-        heading: '이용자 권리',
-        body: '이용자는 개인정보 처리 관련 문의 또는 정정/삭제 요청을 문의 채널로 접수할 수 있습니다. 법령상 보존이 필요한 경우를 제외하고 확인 후 처리합니다.',
-      },
-      {
-        heading: '시행일',
-        body: '본 방침은 2026-04-03부터 적용됩니다.',
+        heading: '결과 저장은 어떻게 사용되나요?',
+        body: '사용자가 직접 저장한 분석 결과는 마이페이지에서 다시 확인하고, 이후 비교/성장 피드백 기능의 기반 데이터로 활용됩니다.',
       },
     ],
   },
   terms: {
-    title: '이용약관',
+    title: '이용 안내',
     sections: [
       {
         heading: '서비스 성격',
-        body: 'Git Insight는 공개 데이터를 기반으로 통계/요약 정보를 제공하는 참고용 서비스이며, 결과는 정보 제공 목적입니다.',
+        body: 'Git Insight는 공개 데이터를 기반으로 한 참고용 분석 도구이며, 저장된 결과는 사용자 경험 개선과 기능 확장을 위한 기반으로 활용됩니다.',
       },
       {
-        heading: '면책',
-        body: '제공되는 정보는 외부 API 상태, 공개 범위, 데이터 반영 시점의 영향을 받을 수 있습니다. 중요한 의사결정 전 추가 검토가 필요합니다.',
-      },
-      {
-        heading: '금지 행위',
-        body: '사용자는 관련 법령 및 플랫폼 정책을 준수해야 하며, 서비스 장애 유발 행위, 비정상적 자동 호출, 타인의 권리 침해 행위를 해서는 안 됩니다.',
-      },
-      {
-        heading: '서비스 변경 및 중단',
-        body: '서비스는 운영상 필요에 따라 기능 변경, 점검, 중단이 발생할 수 있습니다. 운영자는 안정적 제공을 위해 합리적인 범위 내에서 노력합니다.',
-      },
-      {
-        heading: '준거 및 분쟁',
-        body: '약관 해석 및 분쟁 해결에는 관련 법령이 적용되며, 세부 분쟁 처리 절차는 문의 채널을 통해 우선 협의합니다.',
+        heading: '현재 단계',
+        body: '이번 단계는 로그인/세션/저장 구조의 뼈대를 우선 구현하는 상태이며, 저장 비교와 성장 피드백은 다음 단계에서 확장할 예정입니다.',
       },
     ],
   },
 }
+
 const HOW_IT_WORKS_STEPS = [
   {
     step: 'Step 1',
     title: 'GitHub ID 입력',
-    description: '보고 싶은 GitHub 사용자 아이디만 입력하면 바로 분석을 시작합니다.',
+    description: '분석하고 싶은 GitHub 사용자 아이디만 입력하면 바로 결과를 확인할 수 있습니다.',
   },
   {
     step: 'Step 2',
     title: '활동 흐름 분석',
-    description: '레포지토리, 이벤트, 언어 분포를 바탕으로 읽기 쉬운 요약을 만듭니다.',
+    description: '레포지토리, 이벤트, 언어 분포를 기준으로 읽기 쉬운 요약을 만듭니다.',
   },
   {
     step: 'Step 3',
     title: '다음 액션 확인',
-    description: '현재 강점과 보완 포인트, 다음에 보면 좋을 제안까지 한눈에 보여줍니다.',
+    description: '현재 강점과 보완 포인트, 그리고 다음에 무엇을 보면 좋을지 이어서 보여줍니다.',
   },
 ]
 
@@ -161,70 +114,46 @@ const LANDING_CONTENT_SECTIONS = [
   {
     kicker: 'Why It Matters',
     title: 'GitHub 활동 분석이 중요한 이유',
-    paragraphs: [
-      'GitHub 활동은 단순히 커밋 숫자를 보여주는 기록이 아니라, 어떤 주제로 작업하고 어떤 리듬으로 개발을 이어가는지를 드러내는 공개 흔적입니다. 누군가 포트폴리오를 읽을 때도 완성된 결과물만큼이나 과정의 밀도와 꾸준함을 함께 보게 되는 경우가 많습니다.',
-      'Git Insight는 공개 GitHub 데이터를 바탕으로 최근 활동 패턴을 빠르게 읽을 수 있도록 정리합니다. 특정 기간에 활동이 집중됐는지, 여러 날에 걸쳐 이어졌는지, 어떤 언어와 이벤트가 중심인지 한 화면에서 파악할 수 있게 만드는 것이 목표입니다.',
+    summary: '포트폴리오나 공개 프로필에서 결과물뿐 아니라 과정과 리듬도 함께 읽히는 시대입니다.',
+    points: [
+      '최근 활동의 흐름과 간격을 빠르게 읽을 수 있습니다.',
+      '채용, 협업, 포트폴리오 검토에서 공개 기록을 설명하기 쉬워집니다.',
     ],
+    tags: ['공개 기록', '포트폴리오'],
   },
   {
     kicker: 'What We Read',
     title: '이 서비스가 읽는 데이터',
-    paragraphs: [
-      '분석에는 공개 프로필, 공개 저장소, 공개 이벤트 정보가 사용됩니다. 기간을 7일, 30일, 90일, 6개월, 1년으로 바꿔가며 계산할 수 있기 때문에 짧은 집중 구간과 장기적인 패턴을 비교해 보기 좋습니다.',
-      '다만 비공개 저장소 활동, 조직 내부 작업, 외부 협업 도구에서 이뤄진 기록은 충분히 반영되지 않을 수 있습니다. 그래서 결과는 절대적인 평가라기보다, 공개 활동 패턴을 읽기 위한 참고 자료로 해석하는 편이 더 적절합니다.',
+    summary: '공개 레포, 저장소 언어, 이벤트 기록을 기반으로 최근 흐름을 기간별로 다시 정리합니다.',
+    points: [
+      '공개 프로필과 저장소, 이벤트를 기준으로 현재 흐름을 요약합니다.',
+      '비공개 저장소와 조직 내부 작업은 충분히 반영되지 않을 수 있습니다.',
     ],
-  },
-  {
-    kicker: 'How To Interpret',
-    title: '지표를 읽는 기본 방법',
-    paragraphs: [
-      'Push 이벤트 수가 높으면 코드 반영이 활발하다는 신호일 수 있지만, 그것만으로 품질을 뜻하지는 않습니다. 활동 일수는 개발 리듬을 읽는 데 유용하고, 언어 분포는 현재 공개 저장소 기준으로 어떤 기술 축이 보이는지를 알려줍니다.',
-      '이벤트 유형 분포는 코드 작성 외에도 이슈 관리, PR 정리, 협업 흔적이 얼마나 드러나는지를 보여줍니다. 하나의 숫자만 보기보다 여러 지표를 함께 보는 편이 훨씬 더 정확한 해석으로 이어집니다.',
-    ],
-  },
-  {
-    kicker: 'How To Use',
-    title: '이 결과를 어디에 활용할 수 있나요?',
-    paragraphs: [
-      '개발자는 최근 GitHub 활동이 외부에서 어떻게 보일지 점검할 수 있고, 취업이나 포트폴리오 준비 중이라면 공개 이력에서 강점과 빈약한 지점을 빠르게 찾을 수 있습니다. 팀 프로젝트를 운영하는 경우에도 기록이 지나치게 산발적인지, 한 프로젝트에 설득력 있게 모여 있는지 확인하는 데 도움이 됩니다.',
-      '특히 README 정리, 커밋 메시지 정돈, 공개 저장소 설명 보강 같은 후속 액션과 함께 보면 결과가 더 유용해집니다. 숫자를 보는 데서 끝나지 않고 다음에 무엇을 바꾸면 좋을지 연결하는 것이 Git Insight의 핵심 가치입니다.',
-    ],
+    tags: ['공개 데이터', '이벤트'],
   },
 ]
 
 const CONTENT_LINKS = [
   {
     href: '/guide.html',
-    title: '분석 해석 가이드',
-    description: '결과 화면의 숫자와 차트를 어떤 기준으로 읽으면 좋은지 정리한 안내입니다.',
+    title: '결과 해석 가이드',
+    description: '결과 화면의 숫자와 차트를 어떤 기준으로 읽으면 좋은지 정리한 페이지입니다.',
   },
   {
     href: '/github-portfolio-guide.html',
     title: '좋은 GitHub 포트폴리오 만드는 법',
-    description: '공개 저장소 구성, README, 활동 흐름을 어떻게 정리하면 더 설득력 있게 보이는지 설명합니다.',
+    description: '공개 사용자 정보, README, 활동 흐름을 어떻게 정리하면 더 설득력 있게 보이는지 설명합니다.',
   },
   {
     href: '/readme-writing-guide.html',
-    title: 'README 잘 쓰는 법',
-    description: '프로젝트 목적, 주요 기능, 기술 선택 이유, 실행 방법을 어떻게 문서화하면 좋은지 다룹니다.',
+    title: 'README 작성 가이드',
+    description: '프로젝트 목적, 주요 기능, 실행 방법, 기술 선택 배경을 문서화하는 방법을 안내합니다.',
   },
   {
     href: '/github-activity-interpretation.html',
     title: 'GitHub 활동 기록 해석법',
-    description: '활동량, 꾸준함, 협업 흔적을 어떤 맥락으로 봐야 하는지 차분하게 설명한 글입니다.',
+    description: '활동량과 기록 패턴이 어떤 의미로 읽히는지 차분하게 풀어 설명합니다.',
   },
-]
-
-const LANDING_QUICK_POINTS = [
-  'Push 흐름',
-  '활동 일수',
-  '언어 분포',
-  '협업 흔적',
-]
-
-const EDITORIAL_TAGS = [
-  ['공개 기록', '포트폴리오'],
-  ['프로필', '이벤트'],
 ]
 
 function delay(ms) {
@@ -238,7 +167,15 @@ function readCurrentRoute() {
     return 'landing'
   }
 
-  return window.location.pathname === '/result' ? 'result' : 'landing'
+  if (window.location.pathname === '/result') {
+    return 'result'
+  }
+
+  if (window.location.pathname === '/mypage') {
+    return 'mypage'
+  }
+
+  return 'landing'
 }
 
 function readSharedState() {
@@ -275,10 +212,6 @@ function PolicyModal({ policy, onClose }) {
     return null
   }
 
-  const toggleSection = (targetIndex) => {
-    setOpenIndex((current) => (current === targetIndex ? -1 : targetIndex))
-  }
-
   return (
     <div
       className="policy-modal-backdrop"
@@ -296,6 +229,7 @@ function PolicyModal({ policy, onClose }) {
             ×
           </button>
         </div>
+
         <div className="policy-modal-body">
           {policy.sections.map((section, index) => {
             const isOpen = openIndex === index
@@ -305,12 +239,12 @@ function PolicyModal({ policy, onClose }) {
                 <button
                   type="button"
                   className="policy-accordion-trigger"
-                  onClick={() => toggleSection(index)}
+                  onClick={() => setOpenIndex((current) => (current === index ? -1 : index))}
                   aria-expanded={isOpen}
                 >
                   <span>{section.heading}</span>
                   <span className={`policy-accordion-caret${isOpen ? ' is-open' : ''}`} aria-hidden="true">
-                    ⌃
+                    ▾
                   </span>
                 </button>
                 {isOpen ? (
@@ -331,6 +265,9 @@ function App() {
   const initialState = readSharedState()
   const initialStateRef = useRef(initialState)
   const initialRouteRef = useRef(readCurrentRoute())
+  const initialSearchDoneRef = useRef(false)
+  const latestRequestRef = useRef('')
+
   const [route, setRoute] = useState(readCurrentRoute())
   const [username, setUsername] = useState(initialState.username)
   const [selectedDays, setSelectedDays] = useState(initialState.days)
@@ -339,8 +276,16 @@ function App() {
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [error, setError] = useState('')
   const [policyModalKey, setPolicyModalKey] = useState('')
-  const latestRequestRef = useRef('')
-  const initialSearchDoneRef = useRef(false)
+  const [session, setSession] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [authActionLoading, setAuthActionLoading] = useState(false)
+  const [authMessage, setAuthMessage] = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [savedResults, setSavedResults] = useState([])
+  const [savedResultsLoading, setSavedResultsLoading] = useState(false)
+  const [savedResultsError, setSavedResultsError] = useState('')
+  const [deletingSavedResultId, setDeletingSavedResultId] = useState('')
+
   const activePolicy = policyModalKey ? POLICY_MODAL_CONTENT[policyModalKey] : null
 
   const syncFromLocation = () => {
@@ -350,7 +295,7 @@ function App() {
     setUsername(nextState.username)
     setSelectedDays(nextState.days)
 
-    if (nextRoute !== 'result') {
+    if (nextRoute === 'landing') {
       setUserData(null)
       setError('')
       setFeedbackLoading(false)
@@ -361,32 +306,42 @@ function App() {
   }
 
   const navigateToLanding = () => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
     window.history.pushState({}, '', '/')
     syncFromLocation()
   }
 
-  const closePolicyModal = () => {
-    setPolicyModalKey('')
-  }
-
-  const openPolicyModal = (key) => {
-    setPolicyModalKey(key)
-  }
-
   const navigateToResult = (nextUsername, nextDays, replace = false) => {
-    if (typeof window === 'undefined') {
+    const nextUrl = buildResultUrl(nextUsername, nextDays)
+    window.history[replace ? 'replaceState' : 'pushState']({}, '', nextUrl)
+    setRoute('result')
+  }
+
+  const navigateToMyPage = () => {
+    window.history.pushState({}, '', '/mypage')
+    setRoute('mypage')
+  }
+
+  const loadSavedResults = useCallback(async (activeSession) => {
+    if (!activeSession) {
+      setSavedResults([])
+      setSavedResultsError('')
       return
     }
 
-    const nextUrl = buildResultUrl(nextUsername, nextDays)
-    const historyMethod = replace ? 'replaceState' : 'pushState'
-    window.history[historyMethod]({}, '', nextUrl)
-    setRoute('result')
-  }
+    setSavedResultsLoading(true)
+    setSavedResultsError('')
+
+    try {
+      const nextItems = await fetchSavedResults(activeSession)
+      setSavedResults(nextItems)
+    } catch (loadError) {
+      setSavedResultsError(
+        loadError.message || '저장한 결과 목록을 불러오지 못했습니다. saved_results 테이블 구조를 확인해주세요.',
+      )
+    } finally {
+      setSavedResultsLoading(false)
+    }
+  }, [])
 
   const performSearch = async (targetUsername, targetDays) => {
     const requestKey = `${targetUsername}:${targetDays}`
@@ -404,7 +359,7 @@ function App() {
         const message = String(firstError?.message ?? '')
         const shouldRetry =
           message.includes('잠시') ||
-          message.includes('응답이 오래') ||
+          message.includes('응답') ||
           message.includes('다시 시도')
 
         if (!shouldRetry) {
@@ -495,11 +450,105 @@ function App() {
     await performSearch(normalizedUsername, overrideDays)
   }
 
-  const handlePeriodChange = (days) => {
-    setSelectedDays(days)
+  const handleGoogleLogin = async () => {
+    setAuthActionLoading(true)
+    setAuthMessage('')
 
-    if (route === 'result' && username.trim()) {
-      void handleSearch(days, { navigate: true, replace: true })
+    try {
+      await signInWithGoogle()
+    } catch (loginError) {
+      setAuthMessage(loginError.message || 'Google 로그인 연결에 실패했습니다.')
+      setAuthActionLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    setAuthActionLoading(true)
+    setAuthMessage('')
+
+    try {
+      await signOutFromSupabase()
+      setSavedResults([])
+      setSavedResultsError('')
+      if (route === 'mypage') {
+        navigateToLanding()
+      }
+    } catch (logoutError) {
+      setAuthMessage(logoutError.message || '로그아웃에 실패했습니다.')
+    } finally {
+      setAuthActionLoading(false)
+    }
+  }
+
+  const handleSaveCurrentResult = async () => {
+    if (!session) {
+      setAuthMessage('로그인 후 결과를 저장할 수 있습니다.')
+      return
+    }
+
+    if (!userData) {
+      return
+    }
+
+    setSaveLoading(true)
+    setAuthMessage('')
+
+    try {
+      await saveAnalysisResult(session, userData)
+      setAuthMessage('현재 결과를 저장했습니다.')
+      await loadSavedResults(session)
+    } catch (saveError) {
+      setAuthMessage(
+        saveError.message ||
+          '결과 저장에 실패했습니다. saved_results 테이블 컬럼(user_id, github_username, window_days, profile_name, headline, snapshot)을 확인해주세요.',
+      )
+    } finally {
+      setSaveLoading(false)
+    }
+  }
+
+  const handleOpenSavedResult = (savedResult) => {
+    const snapshot = savedResult.snapshot
+    if (!snapshot) {
+      return
+    }
+
+    setUserData(snapshot)
+    setUsername(savedResult.github_username || snapshot.username || '')
+    setSelectedDays(savedResult.window_days || snapshot?.stats?.activity_summary?.window_days || DEFAULT_DAYS)
+    setError('')
+    setFeedbackLoading(false)
+    navigateToResult(
+      savedResult.github_username || snapshot.username || '',
+      savedResult.window_days || snapshot?.stats?.activity_summary?.window_days || DEFAULT_DAYS,
+    )
+  }
+
+  const handleDeleteSavedResult = async (savedResult) => {
+    if (!session || !savedResult?.id) {
+      return
+    }
+
+    const shouldDelete = window.confirm(
+      `${savedResult.github_username} 분석 기록을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+    )
+
+    if (!shouldDelete) {
+      return
+    }
+
+    setDeletingSavedResultId(savedResult.id)
+    setSavedResultsError('')
+    setAuthMessage('')
+
+    try {
+      await deleteSavedResult(session, savedResult.id)
+      setSavedResults((current) => current.filter((item) => item.id !== savedResult.id))
+      setAuthMessage('저장한 결과를 삭제했습니다.')
+    } catch (deleteError) {
+      setSavedResultsError(deleteError.message || '저장한 결과를 삭제하지 못했습니다.')
+    } finally {
+      setDeletingSavedResultId('')
     }
   }
 
@@ -510,11 +559,15 @@ function App() {
       if (nextRoute === 'result' && nextState.username) {
         void performSearch(nextState.username, nextState.days)
       }
+
+      if (nextRoute === 'mypage' && session) {
+        void loadSavedResults(session)
+      }
     }
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  }, [loadSavedResults, session])
 
   useEffect(() => {
     if (initialSearchDoneRef.current) {
@@ -526,7 +579,54 @@ function App() {
     if (initialRouteRef.current === 'result' && initialStateRef.current.username) {
       void performSearch(initialStateRef.current.username, initialStateRef.current.days)
     }
-  }, [])
+  }, [loadSavedResults])
+
+  useEffect(() => {
+    let mounted = true
+
+    const bootstrapSession = async () => {
+      try {
+        const currentSession = await getCurrentSession()
+        if (!mounted) {
+          return
+        }
+
+        setSession(currentSession)
+        if (readCurrentRoute() === 'mypage' && currentSession) {
+          void loadSavedResults(currentSession)
+        }
+      } catch (sessionError) {
+        if (mounted) {
+          setAuthMessage(sessionError.message || '세션을 불러오지 못했습니다.')
+        }
+      } finally {
+        if (mounted) {
+          setAuthLoading(false)
+          setAuthActionLoading(false)
+        }
+      }
+    }
+
+    bootstrapSession()
+
+    const unsubscribe = subscribeToAuthChanges((nextSession) => {
+      setSession(nextSession)
+      setAuthLoading(false)
+      setAuthActionLoading(false)
+
+      if (nextSession) {
+        void loadSavedResults(nextSession)
+      } else {
+        setSavedResults([])
+        setSavedResultsError('')
+      }
+    })
+
+    return () => {
+      mounted = false
+      unsubscribe()
+    }
+  }, [loadSavedResults])
 
   useEffect(() => {
     if (!activePolicy) {
@@ -538,7 +638,7 @@ function App() {
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        closePolicyModal()
+        setPolicyModalKey('')
       }
     }
 
@@ -550,206 +650,207 @@ function App() {
     }
   }, [activePolicy])
 
-  if (route === 'result') {
-    return (
-      <main className="app-shell result-shell">
-        <section className="result-header-panel">
-          <button type="button" className="result-home-link" onClick={navigateToLanding}>
+  return (
+    <main className={`app-shell ${route === 'result' ? 'result-shell' : route === 'mypage' ? 'mypage-shell' : 'landing-shell'}`}>
+      {route === 'landing' ? (
+        <header className="app-topbar app-topbar-landing">
+          <div className="app-topbar-actions">
+            {authMessage ? <p className="auth-status-message">{authMessage}</p> : null}
+            <AuthMenu
+              session={session}
+              loading={authLoading || authActionLoading}
+              onLogin={handleGoogleLogin}
+              onLogout={handleLogout}
+              onNavigateToMyPage={navigateToMyPage}
+            />
+          </div>
+        </header>
+      ) : (
+        <header className="app-topbar">
+          <button type="button" className="app-home-link" onClick={navigateToLanding}>
             <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
             <span>Git Insight</span>
           </button>
 
-          <SearchForm
-            variant="compact"
-            username={username}
-            loading={loading}
-            periods={PERIOD_OPTIONS}
-            selectedDays={selectedDays}
-            onUsernameChange={setUsername}
-            onPeriodChange={handlePeriodChange}
-            onSearch={() => handleSearch(selectedDays, { navigate: true, replace: true })}
-          />
+          <div className="app-topbar-actions">
+            {authMessage ? <p className="auth-status-message">{authMessage}</p> : null}
+            <AuthMenu
+              session={session}
+              loading={authLoading || authActionLoading}
+              onLogin={handleGoogleLogin}
+              onLogout={handleLogout}
+              onNavigateToMyPage={navigateToMyPage}
+            />
+          </div>
+        </header>
+      )}
 
-          {error ? <p className="status-message error-message">{error}</p> : null}
-        </section>
+      {route === 'result' ? (
+        <>
+          <section className="result-header-panel">
+            <SearchForm
+              variant="compact"
+              username={username}
+              loading={loading}
+              periods={PERIOD_OPTIONS}
+              selectedDays={selectedDays}
+              onUsernameChange={setUsername}
+              onPeriodChange={(days) => {
+                setSelectedDays(days)
+                if (route === 'result' && username.trim()) {
+                  void handleSearch(days, { navigate: true, replace: true })
+                }
+              }}
+              onSearch={() => handleSearch(selectedDays, { navigate: true, replace: true })}
+            />
 
-        <section className="content-panel">
-          {userData ? (
-            <ProfileCard userData={userData} feedbackLoading={feedbackLoading} />
-          ) : (
-            <div className="empty-state result-empty-state">
-              <p className="empty-kicker">Result</p>
-              <h2>분석 결과를 준비하고 있습니다</h2>
-              <p>
-                GitHub 아이디를 입력하고 기간을 고르면 요약, 언어 분포, 다음 액션까지 결과로
-                바로 보여드립니다.
-              </p>
+            {error ? <p className="status-message error-message">{error}</p> : null}
+          </section>
+
+          <section className="content-panel">
+            {userData ? (
+              <ProfileCard
+                userData={userData}
+                feedbackLoading={feedbackLoading}
+                onSaveResult={handleSaveCurrentResult}
+                saveLoading={saveLoading}
+                canSave={Boolean(session)}
+              />
+            ) : (
+              <div className="empty-state result-empty-state">
+                <p className="empty-kicker">Result</p>
+                <h2>분석 결과를 준비하고 있습니다</h2>
+                <p>GitHub 아이디와 기간을 입력하면 요약, 언어 분포, 다음 액션까지 바로 보여드립니다.</p>
+              </div>
+            )}
+          </section>
+        </>
+      ) : null}
+
+      {route === 'mypage' ? (
+        <MyPage
+          session={session}
+          items={savedResults}
+          loading={savedResultsLoading}
+          error={savedResultsError}
+          onRefresh={() => loadSavedResults(session)}
+          onOpenResult={handleOpenSavedResult}
+          onLogin={handleGoogleLogin}
+          onDeleteResult={handleDeleteSavedResult}
+          deletingId={deletingSavedResultId}
+        />
+      ) : null}
+
+      {route === 'landing' ? (
+        <>
+          <section className="landing-hero">
+            <div className="landing-brand-mark">
+              <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
             </div>
-          )}
-        </section>
+            <p className="landing-kicker">GitHub Activity Reader</p>
+            <h1>Git Insight</h1>
+            <p className="landing-subtitle">
+              GitHub 활동을 한 번에 읽기 쉽게 보고, 다음에 무엇을 보면 좋을지 바로 이어지는 시작 화면입니다.
+            </p>
 
-        <footer className="landing-footer result-footer">
-          <span className="landing-footer-line" aria-hidden="true" />
-          <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('about')}>
-              서비스 소개
-            </button>
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('guide')}>
-              지표 해석 가이드
-            </button>
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('faq')}>
-              자주 묻는 질문
-            </button>
-            <button
-              type="button"
-              className="footer-link-button"
-              onClick={() => openPolicyModal('privacy')}
-            >
-              개인정보처리방침
-            </button>
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('terms')}>
-              이용약관
-            </button>
-            <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
-              문의/오류 제보
-            </a>
-          </nav>
-          <p>© 2026 Git Insight. All Rights Reserved.</p>
-        </footer>
+            <SearchForm
+              variant="landing"
+              username={username}
+              loading={loading}
+              periods={PERIOD_OPTIONS}
+              selectedDays={selectedDays}
+              onUsernameChange={setUsername}
+              onPeriodChange={setSelectedDays}
+              onSearch={() => handleSearch(selectedDays)}
+            />
 
-        <PolicyModal
-          key={activePolicy?.title ?? 'policy-modal-empty'}
-          policy={activePolicy}
-          onClose={closePolicyModal}
-        />
-      </main>
-    )
-  }
+            {error ? <p className="status-message error-message landing-error">{error}</p> : null}
+          </section>
 
-  return (
-    <main className="app-shell landing-shell">
-      <section className="landing-hero">
-        <div className="landing-brand-mark">
-          <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
-        </div>
-        <p className="landing-kicker">GitHub Activity Reader</p>
-        <h1>Git Insight</h1>
-        <p className="landing-subtitle">
-          GitHub 활동을 한 번에 읽기 쉽게 보고, 다음에 무엇을 보면 좋을지 바로 이어지는
-          시작 화면입니다.
-        </p>
+          <section className="landing-steps">
+            <div className="landing-section-heading">
+              <p className="landing-section-kicker">How It Works</p>
+              <h2>결과를 보는 방식</h2>
+            </div>
 
-        <SearchForm
-          variant="landing"
-          username={username}
-          loading={loading}
-          periods={PERIOD_OPTIONS}
-          selectedDays={selectedDays}
-          onUsernameChange={setUsername}
-          onPeriodChange={setSelectedDays}
-          onSearch={() => handleSearch(selectedDays)}
-        />
+            <div className="landing-step-grid">
+              {HOW_IT_WORKS_STEPS.map((item) => (
+                <article key={item.step} className="landing-step-card">
+                  <span className="landing-step-number">{item.step}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </article>
+              ))}
+            </div>
 
-        {error ? <p className="status-message error-message landing-error">{error}</p> : null}
-      </section>
+            <div className="editorial-grid">
+              {LANDING_CONTENT_SECTIONS.map((section) => (
+                <article key={section.title} className="editorial-card">
+                  <div className="editorial-kicker-row">
+                    <span className="editorial-kicker-dot" aria-hidden="true" />
+                    <p className="editorial-kicker">{section.kicker}</p>
+                  </div>
+                  <h3>{section.title}</h3>
+                  <p className="editorial-summary">{section.summary}</p>
+                  <ul className="editorial-points">
+                    {section.points.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                  <div className="editorial-tags">
+                    {section.tags.map((tag) => (
+                      <span key={tag} className="editorial-tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
 
-      <section className="landing-steps">
-        <div className="landing-section-heading">
-          <p className="landing-section-kicker">How It Works</p>
-          <h2>결과를 보는 방식</h2>
-        </div>
+            <div className="landing-section-heading editorial-heading">
+              <p className="landing-section-kicker">More To Read</p>
+              <h2>함께 보면 좋은 읽을거리</h2>
+            </div>
 
-        <div className="landing-step-grid">
-          {HOW_IT_WORKS_STEPS.map((item) => (
-            <article key={item.step} className="landing-step-card">
-              <span className="landing-step-number">{item.step}</span>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-            </article>
-          ))}
-        </div>
+            <div className="content-link-grid">
+              {CONTENT_LINKS.map((item) => (
+                <a key={item.href} href={item.href} className="content-link-card">
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
 
-        <div className="editorial-grid">
-          {LANDING_CONTENT_SECTIONS.slice(0, 2).map((section, index) => (
-            <article key={section.title} className="editorial-card">
-              <div className="editorial-kicker-row">
-                <span className="editorial-kicker-dot" aria-hidden="true" />
-                <p className="editorial-kicker">{section.kicker}</p>
-              </div>
-              <h3>{section.title}</h3>
-              <p className="editorial-summary">
-                {index === 0
-                  ? '포트폴리오나 공개 프로필에서 보이는 최근 활동 인상을 빠르게 읽어줍니다.'
-                  : '공개 프로필, 저장소, 이벤트를 기준으로 최근 흐름을 기간별로 다시 집계합니다.'}
-              </p>
-              <ul className="editorial-points">
-                {(index === 0
-                  ? ['최근 활동의 톤과 꾸준함을 한 화면에서 훑어볼 수 있습니다.', '채용용 프로필이나 공개 포트폴리오 점검에 바로 활용할 수 있습니다.']
-                  : ['공개 프로필, 저장소, 이벤트를 기간 기준으로 다시 모아 비교합니다.', '비공개 저장소나 외부 협업 기록은 충분히 반영되지 않을 수 있습니다.']
-                ).map((point) => (
-                  <li key={point}>{point}</li>
-                ))}
-              </ul>
-              <div className="editorial-tags">
-                {EDITORIAL_TAGS[index].map((tag) => (
-                  <span key={tag} className="editorial-tag">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+      <footer className="landing-footer">
+        <span className="landing-footer-line" aria-hidden="true" />
+        <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
+          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('about')}>
+            서비스 소개
+          </button>
+          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('guide')}>
+            결과 해석 가이드
+          </button>
+          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('faq')}>
+            자주 묻는 질문
+          </button>
+          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('privacy')}>
+            개인정보 안내
+          </button>
+          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('terms')}>
+            이용 안내
+          </button>
+          <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
+            문의/오류 제보
+          </a>
+        </nav>
+        <p>© 2026 Git Insight. All Rights Reserved.</p>
+      </footer>
 
-        <div className="landing-section-heading editorial-heading">
-          <p className="landing-section-kicker">More To Read</p>
-          <h2>함께 보면 좋은 읽을거리</h2>
-        </div>
-
-        <div className="content-link-grid">
-          {CONTENT_LINKS.map((item) => (
-            <a key={item.href} href={item.href} className="content-link-card">
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-            </a>
-          ))}
-        </div>
-
-        <footer className="landing-footer">
-          <span className="landing-footer-line" aria-hidden="true" />
-          <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('about')}>
-              서비스 소개
-            </button>
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('guide')}>
-              지표 해석 가이드
-            </button>
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('faq')}>
-              자주 묻는 질문
-            </button>
-            <button
-              type="button"
-              className="footer-link-button"
-              onClick={() => openPolicyModal('privacy')}
-            >
-              개인정보처리방침
-            </button>
-            <button type="button" className="footer-link-button" onClick={() => openPolicyModal('terms')}>
-              이용약관
-            </button>
-            <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
-              문의/오류 제보
-            </a>
-          </nav>
-          <p>© 2026 Git Insight. All Rights Reserved.</p>
-        </footer>
-      </section>
-
-      <PolicyModal
-        key={activePolicy?.title ?? 'policy-modal-empty'}
-        policy={activePolicy}
-        onClose={closePolicyModal}
-      />
+      <PolicyModal policy={activePolicy} onClose={() => setPolicyModalKey('')} />
     </main>
   )
 }

@@ -265,7 +265,24 @@ function buildCoverageNote(summary) {
   return `${buildWindowLabel(summary)} 이벤트는 GitHub 공개 Events API 제공 범위까지만 반영됩니다. 활동량이 많은 계정은 장기 기간에서 일부 오래된 이벤트가 제외될 수 있습니다.`
 }
 
-function ProfileCard({ userData, feedbackLoading = false }) {
+function BookmarkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 4.5A2.5 2.5 0 0 1 9.5 2h5A2.5 2.5 0 0 1 17 4.5V21l-5-3-5 3V4.5Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function ProfileCard({
+  userData,
+  feedbackLoading = false,
+  onSaveResult,
+  saveLoading = false,
+  canSave = false,
+}) {
   const {
     profile,
     stats,
@@ -614,6 +631,20 @@ function ProfileCard({ userData, feedbackLoading = false }) {
 
         <div className="result-menu-wrap" ref={menuWrapRef}>
           <div className="result-menu-buttons">
+            <button
+              type="button"
+              className="result-menu-trigger"
+              onClick={onSaveResult}
+              disabled={!onSaveResult || saveLoading}
+            >
+              <span className="result-menu-icon">
+                <BookmarkIcon />
+              </span>
+              <span>
+                {saveLoading ? '저장 중' : canSave ? '저장' : '로그인 후 저장'}
+              </span>
+            </button>
+
             <button
               type="button"
               className="result-menu-trigger"
