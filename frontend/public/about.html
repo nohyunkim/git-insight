@@ -5,21 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Git Insight가 어떤 서비스인지, 어떤 공개 데이터를 바탕으로 결과를 제공하는지 설명하는 서비스 소개 페이지입니다."
+      content="Git Insight 서비스 소개. 공개 GitHub 데이터를 어떤 방식으로 읽고, 무엇을 보여주며, 어떤 한계를 가지는지 설명합니다."
     />
     <title>서비스 소개 | Git Insight</title>
     <style>
-      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
+      body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.75; }
       .page-shell { width: min(960px, calc(100% - 36px)); margin: 32px auto 40px; }
       .brand-link { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; color: #eef4fb; text-decoration: none; font-size: 1.2rem; font-weight: 700; }
       .brand-link img { width: 44px; height: 44px; display: block; }
       main { padding: 28px; border: 1px solid #334155; border-radius: 18px; background: #111827; }
       h1, h2 { margin-top: 0; color: #f8fafc; word-break: keep-all; }
       section { margin-top: 18px; padding: 18px 20px; border: 1px solid #334155; border-radius: 14px; background: #182033; }
-      p { margin: 0; word-break: keep-all; }
-      p + p { margin-top: 10px; }
-      ul { margin: 0; padding-left: 18px; }
-      li + li { margin-top: 8px; }
+      p, li { margin: 0; word-break: keep-all; }
+      p + p, li + li { margin-top: 10px; }
+      ul { margin: 12px 0 0; padding-left: 18px; }
       .kicker { margin-bottom: 10px; color: #8bc8ff; font-size: 0.84rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
       .summary-box { margin-top: 18px; padding: 18px 20px; border: 1px solid rgba(139, 200, 255, 0.24); border-radius: 14px; background: rgba(20, 34, 56, 0.76); }
       .summary-box strong { display: block; margin-bottom: 10px; color: #f8fafc; }
@@ -35,37 +34,76 @@
         <p class="kicker">About</p>
         <h1>Git Insight는 어떤 서비스인가요?</h1>
         <p>
-          Git Insight는 공개 GitHub 활동을 읽기 쉽게 정리해 주는 분석 서비스입니다. GitHub 아이디와 기간을
-          선택하면 최근 활동 흐름, 언어 분포, 이벤트 비중을 한 화면에서 확인할 수 있습니다.
+          Git Insight는 공개 GitHub 활동을 빠르게 읽고 해석할 수 있게 돕는 분석 서비스입니다. 사용자가 GitHub 아이디와
+          기간을 입력하면 공개 프로필, 공개 저장소, 공개 이벤트를 다시 집계해 활동 흐름과 기록 품질을 읽기 쉬운 형태로
+          보여줍니다.
         </p>
+
         <div class="summary-box">
-          <strong>핵심만 보기</strong>
+          <strong>이 서비스가 하는 일</strong>
           <ul>
-            <li>공개 GitHub 활동을 빠르게 점검하는 참고 화면에 가깝습니다.</li>
-            <li>공개 프로필, 공개 저장소, 공개 이벤트 데이터를 바탕으로 동작합니다.</li>
-            <li>포트폴리오를 정리하거나 프로필 인상을 점검할 때 특히 유용합니다.</li>
+            <li>최근 기간의 공개 이벤트 수, Push 수, 활동 일수, 언어 분포를 집계합니다.</li>
+            <li>숫자만 나열하지 않고 활동 흐름을 읽기 쉽게 요약합니다.</li>
+            <li>GitHub 기록을 포트폴리오 관점에서 어떻게 해석할지 참고 힌트를 제공합니다.</li>
           </ul>
         </div>
+
         <section>
-          <h2>왜 GitHub 활동을 읽는 일이 중요할까요?</h2>
+          <h2>왜 만들었나요?</h2>
           <p>
-            공개 GitHub 활동은 결과물뿐 아니라 작업 흐름도 함께 드러냅니다. 어떤 기술이 보이는지, 최근 작업이
-            이어지고 있는지, 협업 흔적이 남아 있는지에 따라 외부에서 받는 인상도 달라질 수 있습니다.
+            GitHub는 많은 정보를 보여주지만, 실제로 어떤 인상으로 읽히는지 한 번에 파악하기는 어렵습니다. Git Insight는 공개
+            활동을 요약해 “지금 기록이 어떤 흐름으로 보이는지”를 더 빠르게 확인하도록 설계되었습니다. 취업 준비, 포트폴리오
+            정리, 공개 저장소 점검 같은 상황에서 참고용 도구로 활용할 수 있습니다.
           </p>
         </section>
+
         <section>
-          <h2>어떤 데이터를 바탕으로 결과를 제공하나요?</h2>
+          <h2>어떤 데이터를 사용하나요?</h2>
           <p>
-            GitHub 공개 API를 통해 공개 프로필, 공개 저장소, 공개 이벤트 정보를 조회하고, 선택한 기간 기준으로
-            다시 집계해 보여 줍니다. 비공개 저장소나 조직 내부 작업까지 완전히 포함되지는 않습니다.
+            GitHub 공개 API를 통해 아래 범위의 정보만 읽습니다. 로그인 후에만 볼 수 있는 정보나 비공개 저장소 내용은 기본적으로
+            포함되지 않습니다.
+          </p>
+          <ul>
+            <li>공개 프로필 정보</li>
+            <li>공개 저장소 목록 및 저장소 언어 정보</li>
+            <li>공개 이벤트 기록</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>어떤 사람에게 유용한가요?</h2>
+          <ul>
+            <li>자신의 GitHub 기록이 외부에서 어떻게 읽히는지 빠르게 보고 싶은 개발자</li>
+            <li>포트폴리오나 공개 저장소를 정리하기 전에 활동 흐름을 점검하고 싶은 사람</li>
+            <li>README, PR 설명, 프로젝트 문서화를 보완할 포인트를 찾고 싶은 사람</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>이 서비스의 한계는 무엇인가요?</h2>
+          <p>
+            Git Insight는 공개 데이터를 바탕으로 참고용 분석을 제공합니다. 따라서 비공개 저장소, 사내 협업 기록, 실제 코드 품질,
+            업무 난이도, 팀 리뷰 문화 같은 요소는 충분히 반영되지 않을 수 있습니다. 또한 GitHub 공개 Events API 특성상 활동량이
+            많은 계정은 장기 기간에서 일부 오래된 이벤트가 제외될 수 있습니다.
           </p>
         </section>
+
         <section>
-          <h2>어떤 사람에게 특히 유용한가요?</h2>
+          <h2>광고와 콘텐츠 운영 원칙</h2>
           <p>
-            자신의 GitHub 프로필이 어떻게 보이는지 빠르게 확인하고 싶은 개발자에게 잘 맞습니다. 포트폴리오를
-            준비하거나 공개 저장소를 정리할 때 특히 실용적인 힌트를 줄 수 있습니다.
+            Git Insight는 결과 화면뿐 아니라 GitHub 기록 해석, README 작성, PR 설명, 포트폴리오 구성과 관련된 읽을거리를 함께
+            제공합니다. 광고를 도입하는 경우에도 검색 버튼, 결과 액션 버튼, 탐색 요소와 혼동되지 않도록 배치하고, 콘텐츠를
+            가리는 방식은 지양합니다.
           </p>
+        </section>
+
+        <section>
+          <h2>업데이트 기준</h2>
+          <p>
+            서비스 소개, 가이드, 정책 문서는 기능 변경과 운영 방식 변경에 맞춰 지속적으로 갱신합니다. 오래된 문구나 잘못된 설명을
+            발견하면 하단의 문의/오류 제보 경로로 알려주시면 확인 후 반영합니다.
+          </p>
+          <p>마지막 업데이트: 2026년 4월 6일</p>
         </section>
       </main>
     </div>
