@@ -47,8 +47,8 @@ function MyPage({
       <section className="mypage-panel">
         <div className="mypage-empty">
           <p className="mypage-kicker">My Page</p>
-          <h2>로그인하면 저장한 결과를 모아볼 수 있어요.</h2>
-          <p>Google 로그인으로 연결하면 결과 저장, 목록 확인, 이후 비교 기능까지 이어서 확장할 수 있습니다.</p>
+          <h2>로그인하면 저장한 결과를 모아볼 수 있어요</h2>
+          <p>Google 로그인으로 연결하면 결과 저장 목록 확인과 이후 비교 기능까지 이어서 확장할 수 있습니다.</p>
           <button type="button" className="mypage-primary-button" onClick={onLogin}>
             Google로 로그인
           </button>
@@ -81,8 +81,8 @@ function MyPage({
 
       {!loading && items.length === 0 ? (
         <div className="mypage-empty">
-          <h3>아직 저장된 결과가 없습니다.</h3>
-          <p>분석 결과 화면에서 '결과 저장'을 누르면 여기에 기록이 쌓입니다.</p>
+          <h3>아직 저장한 결과가 없어요.</h3>
+          <p>분석 결과 화면에서 `저장` 버튼을 누르면 여기에 기록이 쌓입니다.</p>
         </div>
       ) : null}
 

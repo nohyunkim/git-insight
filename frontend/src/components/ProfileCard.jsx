@@ -322,6 +322,13 @@ function ProfileCard({
       : feedbackMeta?.source_detail?.startsWith('generation_failed')
         ? '기본 요약 사용'
       : '기본 요약'
+  const saveButtonLabel = saveLoading
+    ? '저장 중'
+    : feedbackLoading || userData.feedback_pending
+      ? '저장 준비 중'
+      : canSave
+        ? '저장'
+        : '로그인 후 저장'
 
   const handleKakaoShare = useCallback(() => {
     const kakaoState = getKakaoReadyState()
@@ -635,13 +642,13 @@ function ProfileCard({
               type="button"
               className="result-menu-trigger"
               onClick={onSaveResult}
-              disabled={!onSaveResult || saveLoading}
+              disabled={!onSaveResult || saveLoading || feedbackLoading || userData.feedback_pending}
             >
               <span className="result-menu-icon">
                 <BookmarkIcon />
               </span>
               <span>
-                {saveLoading ? '저장 중' : canSave ? '저장' : '로그인 후 저장'}
+                {saveButtonLabel}
               </span>
             </button>
 

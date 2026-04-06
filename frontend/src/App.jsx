@@ -482,11 +482,30 @@ function App() {
 
   const handleSaveCurrentResult = async () => {
     if (!session) {
-      setAuthMessage('로그인 후 결과를 저장할 수 있습니다.')
+      setAuthMessage('로그인 후 저장할 수 있어요.')
       return
     }
 
     if (!userData) {
+      return
+    }
+
+    if (feedbackLoading || userData.feedback_pending) {
+      setAuthMessage('AI 요약 정리 후 저장할 수 있어요.')
+      return
+    }
+
+    const currentUsername = (userData.username ?? '').trim().toLowerCase()
+    const currentWindowDays = userData.stats?.activity_summary?.window_days ?? selectedDays
+    const isAlreadySaved = savedResults.some((item) => {
+      const savedUsername = (item.github_username ?? '').trim().toLowerCase()
+      const savedWindowDays = item.window_days ?? item.snapshot?.stats?.activity_summary?.window_days
+
+      return savedUsername === currentUsername && savedWindowDays === currentWindowDays
+    })
+
+    if (isAlreadySaved) {
+      setAuthMessage('이미 저장된 결과예요.')
       return
     }
 
@@ -495,18 +514,14 @@ function App() {
 
     try {
       await saveAnalysisResult(session, userData)
-      setAuthMessage('현재 결과를 저장했습니다.')
+      setAuthMessage('결과를 저장했어요.')
       await loadSavedResults(session)
     } catch (saveError) {
-      setAuthMessage(
-        saveError.message ||
-          '결과 저장에 실패했습니다. saved_results 테이블 컬럼(user_id, github_username, window_days, profile_name, headline, snapshot)을 확인해주세요.',
-      )
+      setAuthMessage(saveError.message || '저장에 실패했어요.')
     } finally {
       setSaveLoading(false)
     }
   }
-
   const handleOpenSavedResult = (savedResult) => {
     const snapshot = savedResult.snapshot
     if (!snapshot) {
