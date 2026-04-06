@@ -24,21 +24,14 @@ function SearchForm({
     return () => window.removeEventListener('pointerdown', handlePointerDown)
   }, [])
 
-  const selectedPeriod =
-    periods.find((period) => period.days === selectedDays) ?? periods[0]
+  const selectedPeriod = periods.find((period) => period.days === selectedDays) ?? periods[0]
+  const isCompact = variant === 'compact'
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       onSearch()
     }
   }
-
-  const handlePeriodSelect = (days) => {
-    onPeriodChange(days)
-    setIsPeriodOpen(false)
-  }
-
-  const isCompact = variant === 'compact'
 
   return (
     <div className={`search-card search-card-${variant}`}>
@@ -58,10 +51,10 @@ function SearchForm({
           <input
             id="github-username"
             type="text"
-            placeholder=""
             value={username}
             onChange={(event) => onUsernameChange(event.target.value)}
             onKeyDown={handleKeyDown}
+            placeholder="username"
           />
         </div>
 
@@ -91,7 +84,10 @@ function SearchForm({
                       key={period.days}
                       type="button"
                       className={`period-option${isActive ? ' is-active' : ''}`}
-                      onClick={() => handlePeriodSelect(period.days)}
+                      onClick={() => {
+                        onPeriodChange(period.days)
+                        setIsPeriodOpen(false)
+                      }}
                       role="option"
                       aria-selected={isActive}
                     >
@@ -118,7 +114,7 @@ function SearchForm({
             {loading ? (
               <span className="button-loading">
                 <span className="button-spinner" aria-hidden="true" />
-                불러오는 중
+                분석 중
               </span>
             ) : (
               '분석 시작'
