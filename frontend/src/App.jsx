@@ -442,6 +442,7 @@ function App() {
             ...current,
             feedback: feedbackData.feedback,
             feedback_source: feedbackData.feedback_source,
+            feedback_meta: feedbackData.feedback_meta,
             feedback_pending: feedbackData.feedback_pending,
           }
         })
