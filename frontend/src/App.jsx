@@ -195,33 +195,23 @@ const LANDING_CONTENT_SECTIONS = [
 const CONTENT_LINKS = [
   {
     href: '/guide.html',
-    title: '지표 해석 가이드',
-    description: '결과 화면의 숫자와 차트를 어떤 기준으로 읽으면 좋은지 정리한 안내 페이지입니다.',
+    title: '분석 해석 가이드',
+    description: '결과 화면의 숫자와 차트를 어떤 기준으로 읽으면 좋은지 정리한 안내입니다.',
   },
   {
     href: '/github-portfolio-guide.html',
     title: '좋은 GitHub 포트폴리오 만드는 법',
-    description: '공개 저장소 구성, README, 활동 흐름을 어떻게 정리하면 더 선명하게 보이는지 설명합니다.',
+    description: '공개 저장소 구성, README, 활동 흐름을 어떻게 정리하면 더 설득력 있게 보이는지 설명합니다.',
   },
   {
     href: '/readme-writing-guide.html',
-    title: 'README 작성 가이드',
-    description: '프로젝트 목적, 주요 기능, 실행 방법, 기술 선택 이유를 문서로 정리하는 방법을 다룹니다.',
+    title: 'README 잘 쓰는 법',
+    description: '프로젝트 목적, 주요 기능, 기술 선택 이유, 실행 방법을 어떻게 문서화하면 좋은지 다룹니다.',
   },
   {
     href: '/github-activity-interpretation.html',
     title: 'GitHub 활동 기록 해석법',
-    description: '활동의 양보다 작업 흔적을 어떤 맥락으로 읽어야 하는지 차분하게 설명한 글입니다.',
-  },
-  {
-    href: '/commit-message-guide.html',
-    title: '좋은 커밋 메시지 작성 가이드',
-    description: '공개 GitHub 기록이 더 실무적으로 읽히도록 커밋 메시지를 정리하는 방법을 설명합니다.',
-  },
-  {
-    href: '/pr-description-guide.html',
-    title: '좋은 PR 설명 작성 가이드',
-    description: '변경 이유, 테스트 방법, 영향 범위를 어떻게 적으면 좋은지 정리한 실무형 안내 글입니다.',
+    description: '활동량, 꾸준함, 협업 흔적을 어떤 맥락으로 봐야 하는지 차분하게 설명한 글입니다.',
   },
 ]
 
