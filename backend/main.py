@@ -21,6 +21,7 @@ PROJECT_ROOT = BASE_DIR.parent
 GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 ALLOWED_WINDOWS = {7, 30, 90, 180, 365}
 MAX_GITHUB_EVENT_PAGES = 3
+FEEDBACK_PROMPT_VERSION = 'v2'
 
 # 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
 load_dotenv(PROJECT_ROOT / '.env')
@@ -112,6 +113,20 @@ def normalize_window_days(days: int):
 
 def build_cache_key(username: str, days: int):
     return f'{username}:{days}'
+
+
+def build_feedback_cache_key(username: str, days: int):
+    provider = AI_PROVIDER or 'rule-based'
+    model = GROQ_MODEL if provider == 'groq' else 'rule-based'
+    return f'{username}:{days}:{provider}:{model}:{FEEDBACK_PROMPT_VERSION}'
+
+
+def log_feedback_event(username: str, days: int, status: str, detail: str | None = None):
+    detail_suffix = f' detail={detail}' if detail else ''
+    print(
+        f'Feedback generation status={status} username={username} '
+        f'days={days} provider={AI_PROVIDER}{detail_suffix}'
+    )
 
 
 def window_label(days: int):
@@ -207,7 +222,7 @@ def sanitize_feedback(payload: dict):
     next_step = str(payload.get('next_step', '')).strip()
 
     if not headline or not strength or not improvement or not next_step:
-        return None
+        return None, 'missing_fields'
 
     cleaned_feedback = {
         'headline': headline[:140],
@@ -220,7 +235,7 @@ def sanitize_feedback(payload: dict):
 
     # 한글 UI에 한자나 호환 한자가 섞이면 바로 폐기합니다.
     if re.search(r'[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]', combined_text):
-        return None
+        return None, 'contains_cjk'
 
     banned_phrases = (
         'GitHub 활동을 시작하셨군요',
@@ -240,16 +255,16 @@ def sanitize_feedback(payload: dict):
         '발생시키는 활동',
     )
     if any(phrase in value for value in cleaned_feedback.values() for phrase in banned_phrases):
-        return None
+        return None, 'contains_banned_phrase'
 
     if cleaned_feedback['headline'].endswith('!'):
-        return None
+        return None, 'headline_exclamation'
 
     if re.search(r'[A-Za-z]+Event', combined_text):
-        return None
+        return None, 'contains_event_name'
 
     if re.search(r'JavaScript,\s*HTML,\s*Python', combined_text):
-        return None
+        return None, 'contains_literal_language_triplet'
 
     if '30일 동안' in cleaned_feedback['strength'] and len(re.findall(r'\d+', cleaned_feedback['strength'])) >= 2:
         return None
@@ -279,15 +294,26 @@ def sanitize_feedback(payload: dict):
 
 def normalize_feedback(payload: dict, fallback_feedback: dict):
     sanitized = sanitize_feedback(payload)
+    if isinstance(sanitized, tuple):
+        normalized_feedback, reason = sanitized
+        if normalized_feedback:
+            return normalized_feedback, 'ai'
+        return {
+            'headline': fallback_feedback['headline'],
+            'strength': fallback_feedback['strength'],
+            'improvement': fallback_feedback['improvement'],
+            'next_step': fallback_feedback['next_step'],
+        }, reason
+
     if sanitized:
-        return sanitized
+        return sanitized, 'ai'
 
     return {
         'headline': fallback_feedback['headline'],
         'strength': fallback_feedback['strength'],
         'improvement': fallback_feedback['improvement'],
         'next_step': fallback_feedback['next_step'],
-    }
+    }, 'validation_failed'
 
 
 def build_improvement_hints(
@@ -575,13 +601,32 @@ def generate_feedback_with_groq(
             .strip()
         )
         payload = json.loads(response_text)
-        normalized = normalize_feedback(payload, fallback_feedback)
-        if normalized == fallback_feedback:
-            return normalized, 'validation_failed'
+        normalized, normalization_reason = normalize_feedback(payload, fallback_feedback)
+        if normalization_reason != 'ai':
+            log_feedback_event(
+                username,
+                activity_summary.get('window_days', 30),
+                'fallback',
+                normalization_reason,
+            )
+            return normalized, normalization_reason
+
+        log_feedback_event(
+            username,
+            activity_summary.get('window_days', 30),
+            'success',
+            'ai',
+        )
         return normalized, 'ai'
     except Exception as exc:
+        log_feedback_event(
+            username,
+            activity_summary.get('window_days', 30),
+            'error',
+            exc.__class__.__name__,
+        )
         print(f'Groq error: {exc}')
-        return None, 'generation_failed'
+        return None, f'generation_failed:{exc.__class__.__name__}'
 
 
 def normalize_username_or_400(username: str):
@@ -861,17 +906,27 @@ def build_feedback_payload(analysis_payload: dict):
         profile.get('total_repos', 0),
         stats.get('recent_push_events', 0),
     )
+    feedback_meta = {
+        'provider': AI_PROVIDER,
+        'model': GROQ_MODEL if AI_PROVIDER == 'groq' else None,
+        'cache_version': FEEDBACK_PROMPT_VERSION,
+        'source_detail': feedback_source,
+    }
 
     if not feedback:
         feedback = analysis_payload['feedback']
         feedback_source = 'rule-based'
+        feedback_meta['source_detail'] = feedback_meta['source_detail'] or 'rule_based_fallback'
     else:
         feedback = adapt_feedback_to_window(feedback, activity_summary)
+        if feedback_source != 'ai':
+            feedback_source = 'rule-based'
 
     return {
         'username': analysis_payload['username'],
         'feedback': feedback,
         'feedback_source': feedback_source,
+        'feedback_meta': feedback_meta,
         'feedback_pending': False,
     }
 
@@ -914,7 +969,7 @@ async def get_feedback(
 ):
     normalized_username = normalize_username_or_400(username)
     normalized_days = normalize_window_days(days)
-    cache_key = build_cache_key(normalized_username, normalized_days)
+    cache_key = build_feedback_cache_key(normalized_username, normalized_days)
     cached = get_cache_entry(feedback_cache, cache_key)
     if cached:
         return cached

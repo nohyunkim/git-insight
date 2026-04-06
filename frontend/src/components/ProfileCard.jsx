@@ -266,7 +266,14 @@ function buildCoverageNote(summary) {
 }
 
 function ProfileCard({ userData, feedbackLoading = false }) {
-  const { profile, stats, username, feedback, feedback_source: feedbackSource } = userData
+  const {
+    profile,
+    stats,
+    username,
+    feedback,
+    feedback_source: feedbackSource,
+    feedback_meta: feedbackMeta,
+  } = userData
   const [actionMessage, setActionMessage] = useState('')
   const [exportingAction, setExportingAction] = useState('')
   const [openMenu, setOpenMenu] = useState('')
@@ -295,6 +302,8 @@ function ProfileCard({ userData, feedbackLoading = false }) {
     ? 'AI 요약 보강 중'
     : feedbackSource === 'ai'
       ? 'AI 요약 반영'
+      : feedbackMeta?.source_detail?.startsWith('generation_failed')
+        ? '기본 요약 사용'
       : '기본 요약'
 
   const handleKakaoShare = useCallback(() => {
