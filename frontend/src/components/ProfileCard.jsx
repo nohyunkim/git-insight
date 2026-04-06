@@ -257,6 +257,14 @@ function buildInterpretationNotes(summaryLabel) {
   ]
 }
 
+function buildCoverageNote(summary) {
+  if (!summary?.event_data_incomplete) {
+    return ''
+  }
+
+  return `${buildWindowLabel(summary)} 이벤트는 GitHub 공개 Events API 제공 범위까지만 반영됩니다. 활동량이 많은 계정은 장기 기간에서 일부 오래된 이벤트가 제외될 수 있습니다.`
+}
+
 function ProfileCard({ userData, feedbackLoading = false }) {
   const { profile, stats, username, feedback, feedback_source: feedbackSource } = userData
   const [actionMessage, setActionMessage] = useState('')
@@ -276,6 +284,7 @@ function ProfileCard({ userData, feedbackLoading = false }) {
   }
   const summaryLabel = buildWindowLabel(summary)
   const interpretationNotes = buildInterpretationNotes(summaryLabel)
+  const coverageNote = buildCoverageNote(summary)
   const strengthText =
     feedback?.strength ?? '활동 흐름을 바탕으로 강점을 정리하고 있습니다.'
   const improvementText =
@@ -506,6 +515,8 @@ function ProfileCard({ userData, feedbackLoading = false }) {
             <p>{summaryLabel} 공개 이벤트와 언어 분포를 기준으로 요약했습니다.</p>
           </div>
         </div>
+
+        {coverageNote ? <p className="profile-note">{coverageNote}</p> : null}
 
         <section className="insight-card">
           <div className="insight-heading">

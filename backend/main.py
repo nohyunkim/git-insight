@@ -20,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 ALLOWED_WINDOWS = {7, 30, 90, 180, 365}
+MAX_GITHUB_EVENT_PAGES = 3
 
 # 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
 load_dotenv(PROJECT_ROOT / '.env')
@@ -89,6 +90,11 @@ def set_cache_entry(cache: dict[str, tuple[datetime, dict]], key: str, payload: 
         datetime.now(timezone.utc) + timedelta(seconds=CACHE_TTL_SECONDS),
         payload,
     )
+
+
+def has_next_page(response: httpx.Response):
+    link_header = response.headers.get('link', '')
+    return 'rel="next"' in link_header
 
 
 def build_github_headers():
@@ -652,6 +658,8 @@ def summarize_analysis(
     events_data: list,
     repos_data: list,
     days: int,
+    *,
+    events_incomplete: bool = False,
 ):
     now = datetime.now(timezone.utc)
     window_start = now - timedelta(days=days)
@@ -690,6 +698,7 @@ def summarize_analysis(
         'total_events_30d': len(recent_window_events),
         'push_events_30d': summary_event_types.get('PushEvent', 0),
         'active_days_30d': len(active_days),
+        'event_data_incomplete': events_incomplete,
     }
 
     feedback = build_feedback(
@@ -726,8 +735,9 @@ def summarize_analysis(
 async def fetch_user_events(client: httpx.AsyncClient, username: str, headers: dict, days: int):
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     collected_events = []
+    event_data_incomplete = False
 
-    for page in range(1, 4):
+    for page in range(1, MAX_GITHUB_EVENT_PAGES + 1):
         response = await client.get(
             f'https://api.github.com/users/{username}/events?per_page=100&page={page}',
             headers=headers,
@@ -746,8 +756,40 @@ async def fetch_user_events(client: httpx.AsyncClient, username: str, headers: d
         oldest_created_at = parse_github_datetime(page_events[-1].get('created_at'))
         if oldest_created_at and oldest_created_at < cutoff:
             break
+    else:
+        event_data_incomplete = has_next_page(response)
 
-    return None, collected_events
+    return None, collected_events, event_data_incomplete
+
+
+async def fetch_user_repos(client: httpx.AsyncClient, username: str, headers: dict):
+    collected_repos = []
+    page = 1
+    first_response = None
+
+    while True:
+        response = await client.get(
+            f'https://api.github.com/users/{username}/repos?per_page=100&sort=updated&page={page}',
+            headers=headers,
+        )
+        if first_response is None:
+            first_response = response
+
+        if response.status_code != 200:
+            return response, []
+
+        page_repos = response.json()
+        if not page_repos:
+            break
+
+        collected_repos.extend(page_repos)
+
+        if len(page_repos) < 100 or not has_next_page(response):
+            break
+
+        page += 1
+
+    return first_response, collected_repos
 
 
 async def fetch_analysis_payload(username: str, days: int):
@@ -759,17 +801,18 @@ async def fetch_analysis_payload(username: str, days: int):
     client = app.state.github_client
     headers = build_github_headers()
     user_url = f'https://api.github.com/users/{username}'
-    repos_url = (
-        f'https://api.github.com/users/{username}/repos'
-        '?per_page=100&sort=updated'
-    )
-
     try:
-        user_res, repos_res = await asyncio.gather(
+        user_res, repos_result = await asyncio.gather(
             client.get(user_url, headers=headers),
-            client.get(repos_url, headers=headers),
+            fetch_user_repos(client, username, headers),
         )
-        events_res, events_data = await fetch_user_events(client, username, headers, days)
+        repos_res, repos_data = repos_result
+        events_res, events_data, events_incomplete = await fetch_user_events(
+            client,
+            username,
+            headers,
+            days,
+        )
     except httpx.RequestError as exc:
         print(f'GitHub request error for {username}: {exc}')
         raise HTTPException(
@@ -786,8 +829,15 @@ async def fetch_analysis_payload(username: str, days: int):
     user_data = user_res.json()
     if events_res is not None:
         events_data = []
-    repos_data = repos_res.json()
-    payload = summarize_analysis(username, user_data, events_data, repos_data, days)
+        events_incomplete = False
+    payload = summarize_analysis(
+        username,
+        user_data,
+        events_data,
+        repos_data,
+        days,
+        events_incomplete=events_incomplete,
+    )
     set_cache_entry(analysis_cache, cache_key, payload)
     return payload
 

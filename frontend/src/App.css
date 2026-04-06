@@ -891,6 +891,16 @@
   color: #aab9cf;
 }
 
+.profile-note {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(121, 139, 181, 0.24);
+  border-radius: 16px;
+  color: #c7d5e8;
+  background: rgba(34, 42, 62, 0.58);
+  line-height: 1.6;
+}
+
 .result-actions {
   display: flex;
   justify-content: space-between;
