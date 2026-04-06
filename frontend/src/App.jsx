@@ -717,7 +717,7 @@ function App() {
         </div>
 
         <div className="content-link-grid">
-          {CONTENT_LINKS.map((item) => (
+          {CONTENT_LINKS.slice(0, 4).map((item) => (
             <a key={item.href} href={item.href} className="content-link-card">
               <h3>{item.title}</h3>
               <p>{item.description}</p>
