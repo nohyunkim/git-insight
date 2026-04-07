@@ -313,6 +313,11 @@
   border-color: rgba(148, 163, 184, 0.28);
 }
 
+.auth-provider-button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
 .auth-provider-button-disabled {
   border: 1px solid rgba(103, 129, 176, 0.36);
   color: #eef4fb;
@@ -1175,6 +1180,120 @@
   gap: 22px;
 }
 
+.mypage-profile-card {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid rgba(101, 118, 150, 0.72);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(63, 181, 116, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(24, 31, 50, 0.98), rgba(30, 37, 58, 0.98));
+  box-shadow: 0 24px 56px rgba(7, 12, 24, 0.22);
+}
+
+.mypage-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.mypage-profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(143, 196, 255, 0.25);
+}
+
+.mypage-profile-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(110, 147, 227, 0.24);
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.mypage-profile-head h3 {
+  margin: 0 0 6px;
+  color: #f4f7fb;
+}
+
+.mypage-profile-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mypage-profile-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-top: -2px;
+  border: 1px solid rgba(103, 129, 176, 0.72);
+  border-radius: 999px;
+  color: #dce7f8;
+  background: rgba(17, 23, 38, 0.88);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.mypage-profile-edit-button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mypage-profile-edit-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(143, 196, 255, 0.5);
+  background: rgba(26, 35, 56, 0.98);
+}
+
+.mypage-profile-head p {
+  margin: 0;
+  color: #aab9cf;
+}
+
+.mypage-profile-form {
+  display: grid;
+  gap: 10px;
+}
+
+.mypage-profile-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mypage-profile-input {
+  flex: 1 1 280px;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid rgba(103, 129, 176, 0.72);
+  border-radius: 16px;
+  color: #f4f7fb;
+  background: rgba(17, 23, 38, 0.88);
+}
+
+.mypage-profile-input::placeholder {
+  color: #7f92af;
+}
+
+.mypage-profile-help,
+.mypage-profile-message {
+  margin: 0;
+  color: #aab9cf;
+}
+
+.mypage-profile-message {
+  color: #dce7f8;
+}
+
 .mypage-header,
 .mypage-empty {
   padding: 28px;
@@ -1191,6 +1310,37 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.mypage-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(103, 129, 176, 0.72);
+  border-radius: 16px;
+  color: #eef4fb;
+  background: rgba(36, 45, 72, 0.72);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.mypage-icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mypage-icon-button:hover:enabled {
+  transform: translateY(-1px);
+  border-color: rgba(113, 143, 223, 0.88);
+  background: rgba(53, 67, 103, 0.84);
+}
+
+.mypage-icon-button:disabled {
+  opacity: 0.72;
+  cursor: wait;
 }
 
 .mypage-kicker {

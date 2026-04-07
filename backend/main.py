@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import hashlib
 import json
 import os
@@ -24,7 +24,7 @@ MAX_GITHUB_EVENT_PAGES = 3
 EVENT_API_RELIABLE_WINDOW_DAYS = 90
 FEEDBACK_PROMPT_VERSION = 'v2'
 
-# 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
+# ?�행 ?�치?� ?��??�이 루트 ?�는 backend ?�더??.env�??�습?�다.
 load_dotenv(PROJECT_ROOT / '.env')
 load_dotenv(BASE_DIR / '.env', override=False)
 
@@ -108,7 +108,7 @@ def build_github_headers():
 
 def normalize_window_days(days: int):
     if days not in ALLOWED_WINDOWS:
-        raise HTTPException(status_code=400, detail='지원하지 않는 기간입니다.')
+        raise HTTPException(status_code=400, detail='지?�하지 ?�는 기간?�니??')
     return days
 
 
@@ -154,43 +154,43 @@ def build_feedback(
     pr_events = event_types.get('PullRequestEvent', 0)
 
     if total_events == 0:
-        headline = '최근 30일 공개 활동이 아직 많지 않아요.'
-        strength = '지금은 프로필과 저장소 구조를 먼저 쌓아도 좋은 시기입니다.'
-        improvement = '아직 공개 히스토리가 얇아서 꾸준함이나 작업 흐름이 선명하게 드러나진 않는 상태입니다.'
-        next_step = '작은 커밋이라도 주 2~3회 남겨서 활동 흐름을 만들어보세요.'
+        headline = '최근 30??공개 ?�동???�직 많�? ?�아??'
+        strength = '지금�? ?�로?�과 ?�?�소 구조�?먼�? ?�아??좋�? ?�기?�니??'
+        improvement = '?�직 공개 ?�스?�리가 ?�아??꾸�??�이???�업 ?�름???�명?�게 ?�러?�진 ?�는 ?�태?�니??'
+        next_step = '?��? 커밋?�라??�?2~3???�겨???�동 ?�름??만들?�보?�요.'
     elif push_events >= 20:
-        headline = '최근 한 달 동안 꾸준히 코드를 올리고 있어요.'
-        strength = 'Push 이벤트가 많아 손을 놓지 않고 작업 흐름을 이어가고 있다는 점이 강점입니다.'
+        headline = '최근 ?????�안 꾸�???코드�??�리�??�어??'
+        strength = 'Push ?�벤?��? 많아 ?�을 ?��? ?�고 ?�업 ?�름???�어가�??�다???�이 강점?�니??'
         if active_days <= 9:
-            improvement = '다만 활동이 여러 날에 고르게 퍼지기보다 특정 시기에 몰린 편이라, 꾸준한 루틴으로 보이기엔 아직 아쉬움이 있습니다.'
-            next_step = '다음 작업에서는 주 3회 정도로 커밋을 나눠 남겨서, 활동 일수가 자연스럽게 늘어나도록 해보세요.'
+            improvement = '?�만 ?�동???�러 ?�에 고르�??��?기보???�정 ?�기??몰린 ?�이?? 꾸�???루틴?�로 보이기엔 ?�직 ?�쉬?�???�습?�다.'
+            next_step = '?�음 ?�업?�서??�?3???�도�?커밋???�눠 ?�겨?? ?�동 ?�수가 ?�연?�럽�??�어?�도�??�보?�요.'
         elif pr_events <= 2:
-            improvement = '다만 작업량에 비해 PR이나 작업 설명 기록이 적어, 어떤 맥락으로 발전했는지는 덜 또렷하게 보일 수 있습니다.'
-            next_step = '다음 작업에서는 PR 설명이나 README 업데이트를 함께 남겨서, 작업 맥락이 보이게 정리해보세요.'
+            improvement = '?�만 ?�업?�에 비해 PR?�나 ?�업 ?�명 기록???�어, ?�떤 맥락?�로 발전?�는지?????�렷?�게 보일 ???�습?�다.'
+            next_step = '?�음 ?�업?�서??PR ?�명?�나 README ?�데?�트�??�께 ?�겨?? ?�업 맥락??보이�??�리?�보?�요.'
         else:
-            improvement = '다만 활동량에 비해 프로젝트 설명이나 결과 정리가 조금 더 보강되면 성장 흐름이 훨씬 또렷해질 수 있습니다.'
-            next_step = '다음 작업에서는 핵심 프로젝트 하나를 골라 README나 회고 메모까지 남겨보세요.'
+            improvement = '?�만 ?�동?�에 비해 ?�로?�트 ?�명?�나 결과 ?�리가 조금 ??보강?�면 ?�장 ?�름???�씬 ?�렷?�질 ???�습?�다.'
+            next_step = '?�음 ?�업?�서???�심 ?�로?�트 ?�나�?골라 README???�고 메모까�? ?�겨보세??'
     elif active_days >= 10:
-        headline = '최근 30일 활동이 비교적 꾸준한 편이에요.'
-        strength = '여러 날짜에 걸쳐 활동이 분산돼 있어 루틴이 만들어지고 있습니다.'
+        headline = '최근 30???�동??비교??꾸�????�이?�요.'
+        strength = '?�러 ?�짜??걸쳐 ?�동??분산???�어 루틴??만들?��?�??�습?�다.'
         if pr_events <= 2:
-            improvement = '다만 협업 흔적이나 작업 설명이 적다면, 활동량에 비해 배운 점과 개선 흐름이 덜 드러날 수 있습니다.'
-            next_step = '다음 작업에서는 PR 설명이나 작업 기록을 함께 남겨서, 왜 바꿨는지까지 보이게 해보세요.'
+            improvement = '?�만 ?�업 ?�적?�나 ?�업 ?�명???�다�? ?�동?�에 비해 배운 ?�과 개선 ?�름?????�러?????�습?�다.'
+            next_step = '?�음 ?�업?�서??PR ?�명?�나 ?�업 기록???�께 ?�겨?? ??바꿨?��?까�? 보이�??�보?�요.'
         else:
-            improvement = '다만 여러 활동이 보이더라도 대표 프로젝트 하나가 또렷하게 보이지 않으면 인상이 분산될 수 있습니다.'
-            next_step = '다음 작업에서는 가장 공들인 프로젝트 하나를 골라 README, 커밋, PR 흐름을 함께 정리해보세요.'
+            improvement = '?�만 ?�러 ?�동??보이?�라???�???�로?�트 ?�나가 ?�렷?�게 보이지 ?�으�??�상??분산?????�습?�다.'
+            next_step = '?�음 ?�업?�서??가??공들???�로?�트 ?�나�?골라 README, 커밋, PR ?�름???�께 ?�리?�보?�요.'
     else:
-        headline = '활동이 시작되고 있지만 아직 밀도는 낮은 편이에요.'
-        strength = '레포와 이벤트가 쌓이기 시작했고, 이제 패턴을 만들 단계입니다.'
+        headline = '?�동???�작?�고 ?��?�??�직 밀?�는 ??? ?�이?�요.'
+        strength = '?�포?� ?�벤?��? ?�이�??�작?�고, ?�제 ?�턴??만들 ?�계?�니??'
         if total_repos <= 2:
-            improvement = '공개 저장소 수와 활동 일수가 아직 적어서, 어떤 주제로 성장하고 있는지 한눈에 보이진 않는 상태입니다.'
-            next_step = '다음 작업에서는 작더라도 끝까지 마무리한 프로젝트 하나를 더 공개해보세요.'
+            improvement = '공개 ?�?�소 ?��? ?�동 ?�수가 ?�직 ?�어?? ?�떤 주제�??�장?�고 ?�는지 ?�눈??보이�??�는 ?�태?�니??'
+            next_step = '?�음 ?�업?�서???�더?�도 ?�까지 마무리한 ?�로?�트 ?�나�???공개?�보?�요.'
         else:
-            improvement = '활동 일수와 기록 밀도가 아직 높지 않아, 꾸준함이 강하게 보이진 않는 상태입니다.'
-            next_step = '다음 작업에서는 하루 단위의 짧은 커밋을 늘려서, 활동 히스토리가 더 자주 보이게 해보세요.'
+            improvement = '?�동 ?�수?� 기록 밀?��? ?�직 ?��? ?�아, 꾸�??�이 강하�?보이�??�는 ?�태?�니??'
+            next_step = '?�음 ?�업?�서???�루 ?�위??짧�? 커밋???�려?? ?�동 ?�스?�리가 ???�주 보이�??�보?�요.'
 
     if top_language:
-      strength = f'{strength} 현재 가장 많이 보이는 언어는 {top_language}입니다.'
+      strength = f'{strength} ?�재 가??많이 보이???�어??{top_language}?�니??'
 
     return {
         'headline': headline,
@@ -234,11 +234,11 @@ def sanitize_feedback(payload: dict):
 
     combined_text = ' '.join(cleaned_feedback.values())
 
-    # 한글 UI에 한자나 호환 한자가 섞이면 바로 폐기합니다.
+    # ?��? UI???�자???�환 ?�자가 ?�이�?바로 ?�기?�니??
     if re.search(r'[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]', combined_text):
         return None, 'contains_cjk'
 
-    banned_phrases = (
+        banned_phrases = (
         'GitHub 활동을 시작하셨군요',
         'GitHub 활동을 시작하셨군요!',
         '활동을 시작하셨군요',
@@ -267,17 +267,17 @@ def sanitize_feedback(payload: dict):
     if re.search(r'JavaScript,\s*HTML,\s*Python', combined_text):
         return None, 'contains_literal_language_triplet'
 
-    if '30일 동안' in cleaned_feedback['strength'] and len(re.findall(r'\d+', cleaned_feedback['strength'])) >= 2:
+    if '30???�안' in cleaned_feedback['strength'] and len(re.findall(r'\d+', cleaned_feedback['strength'])) >= 2:
         return None
 
-    # 숫자를 여러 개 나열하는 설명은 품질이 낮은 경우가 많아 제외합니다.
+    # ?�자�??�러 �??�열?�는 ?�명?� ?�질????? 경우가 많아 ?�외?�니??
     if len(re.findall(r'\d+', cleaned_feedback['strength'])) >= 2:
         return None
 
     if len(re.findall(r'\d+', cleaned_feedback['headline'])) >= 2:
         return None
 
-    # 각 문장은 최소한의 역할을 해야 하므로 너무 짧은 응답은 폐기합니다.
+    # �?문장?� 최소?�의 ??��???�야 ?��?�??�무 짧�? ?�답?� ?�기?�니??
     if (
         len(cleaned_feedback['headline']) < 12
         or len(cleaned_feedback['strength']) < 20
@@ -286,7 +286,7 @@ def sanitize_feedback(payload: dict):
     ):
         return None
 
-    forbidden_numbers = ('38개의 프로젝트', '38개 프로젝트')
+    forbidden_numbers = ('38개의 ?�로?�트', '38�??�로?�트')
     if any(token in value for value in cleaned_feedback.values() for token in forbidden_numbers):
         return None
 
@@ -330,32 +330,32 @@ def build_improvement_hints(
     active_days = activity_summary['active_days_30d']
 
     if total_events == 0:
-        hints.append('최근 30일 공개 활동이 거의 보이지 않으니 작은 단위 커밋부터 다시 쌓는 것이 좋다.')
+        hints.append('최근 30??공개 ?�동??거의 보이지 ?�으???��? ?�위 커밋부???�시 ?�는 것이 좋다.')
     elif active_days <= 4:
-        hints.append('활동한 날짜 수가 적은 편이라 특정 날에 몰아 작업하기보다 주간 루틴을 만드는 쪽이 좋다.')
+        hints.append('?�동???�짜 ?��? ?��? ?�이???�정 ?�에 몰아 ?�업?�기보다 주간 루틴??만드??쪽이 좋다.')
     elif active_days <= 8:
-        hints.append('활동 밀도는 있지만 루틴으로 굳어졌다고 보긴 어려우니 활동 일수를 조금 더 늘리는 게 좋다.')
+        hints.append('?�동 밀?�는 ?��?�?루틴?�로 굳어졌다�?보긴 ?�려?�니 ?�동 ?�수�?조금 ???�리??�?좋다.')
 
     if push_events <= 3:
-        hints.append('코드 푸시 기록이 적으면 작업 과정이 잘 안 보이니 작은 커밋을 더 자주 남기는 것이 좋다.')
+        hints.append('코드 ?�시 기록???�으�??�업 과정??????보이???��? 커밋?????�주 ?�기??것이 좋다.')
 
     if total_repos <= 2:
-        hints.append('공개 저장소 수가 적어 작업 스펙트럼이 잘 안 보일 수 있으니 작은 프로젝트라도 하나 더 쌓는 것이 좋다.')
+        hints.append('공개 ?�?�소 ?��? ?�어 ?�업 ?�펙?�럼??????보일 ???�으???��? ?�로?�트?�도 ?�나 ???�는 것이 좋다.')
 
     if not event_types.get('PullRequestEvent'):
-        hints.append('풀 리퀘스트 기록이 없으면 협업 흔적이 약해 보일 수 있으니 자기 프로젝트라도 PR 설명을 남겨보는 게 좋다.')
+        hints.append('?� 리퀘스??기록???�으�??�업 ?�적???�해 보일 ???�으???�기 ?�로?�트?�도 PR ?�명???�겨보는 �?좋다.')
     elif event_types.get('PullRequestEvent', 0) <= 2:
-        hints.append('풀 리퀘스트 기록이 적은 편이라 작업 맥락과 변경 이유가 충분히 드러나지 않을 수 있다.')
+        hints.append('?� 리퀘스??기록???��? ?�이???�업 맥락�?변�??�유가 충분???�러?��? ?�을 ???�다.')
 
     issue_events = event_types.get('IssuesEvent', 0) + event_types.get('IssueCommentEvent', 0)
     if issue_events == 0:
-        hints.append('이슈나 댓글 기록이 없어 문제를 어떻게 정리하고 해결했는지가 잘 드러나지 않는다.')
+        hints.append('?�슈???��? 기록???�어 문제�??�떻�??�리?�고 ?�결?�는지가 ???�러?��? ?�는??')
 
     if top_language and languages.get(top_language, 0) >= max(3, total_repos - 1):
-        hints.append(f'{top_language} 비중이 높아 활동 폭이 한쪽으로 모여 보일 수 있다.')
+        hints.append(f'{top_language} 비중???�아 ?�동 ??�� ?�쪽?�로 모여 보일 ???�다.')
 
     if not hints:
-        hints.append('지금은 활동 흐름이 보이므로 다음 단계 제안은 너무 강한 보완 요구보다 기록 품질을 높이는 방향이면 좋다.')
+        hints.append('지금�? ?�동 ?�름??보이므�??�음 ?�계 ?�안?� ?�무 강한 보완 ?�구보다 기록 ?�질???�이??방향?�면 좋다.')
 
     return hints[:3]
 
@@ -371,26 +371,26 @@ def build_strength_hints(
     active_days = activity_summary['active_days_30d']
 
     if push_events >= 20:
-        hints.append('푸시 기록이 많아 작업 흐름이 이어지고 있다.')
+        hints.append('?�시 기록??많아 ?�업 ?�름???�어지�??�다.')
     elif push_events >= 8:
-        hints.append('최근 푸시 기록이 꾸준히 쌓이고 있다.')
+        hints.append('최근 ?�시 기록??꾸�????�이�??�다.')
 
     if active_days >= 10:
-        hints.append('여러 날짜에 걸쳐 활동이 분산돼 있어 루틴이 만들어지고 있다.')
+        hints.append('?�러 ?�짜??걸쳐 ?�동??분산???�어 루틴??만들?��?�??�다.')
     elif active_days >= 6:
-        hints.append('특정 하루에 몰리지 않고 며칠에 걸쳐 활동이 이어지고 있다.')
+        hints.append('?�정 ?�루??몰리지 ?�고 며칠??걸쳐 ?�동???�어지�??�다.')
 
     if event_types.get('PullRequestEvent', 0) >= 3:
-        hints.append('풀 리퀘스트 기록이 있어 작업 정리와 협업 흔적이 보인다.')
+        hints.append('?� 리퀘스??기록???�어 ?�업 ?�리?� ?�업 ?�적??보인??')
 
     if top_language:
-        hints.append(f'주요 언어 흐름은 {top_language} 중심으로 보인다.')
+        hints.append(f'주요 ?�어 ?�름?� {top_language} 중심?�로 보인??')
 
     if total_events >= 40:
-        hints.append('최근 공개 활동량 자체는 충분히 눈에 띄는 편이다.')
+        hints.append('최근 공개 ?�동???�체??충분???�에 ?�는 ?�이??')
 
     if not hints:
-        hints.append('아직 강점을 크게 단정하긴 어렵지만, 공개 활동 데이터는 쌓이기 시작한 상태다.')
+        hints.append('?�직 강점???�게 ?�정?�긴 ?�렵지�? 공개 ?�동 ?�이?�는 ?�이�??�작???�태??')
 
     return hints[:4]
 
@@ -414,30 +414,30 @@ def build_recommendation_hints(
     }
 
     if pull_request_events == 0:
-        hints.append('풀 리퀘스트 흔적이 없으니 자기 프로젝트라도 PR 설명과 변경 이유를 남겨보는 연습이 필요하다.')
+        hints.append('?� 리퀘스???�적???�으???�기 ?�로?�트?�도 PR ?�명�?변�??�유�??�겨보는 ?�습???�요?�다.')
     elif pull_request_events <= 2:
-        hints.append('풀 리퀘스트 기록이 적은 편이니 작업 단위를 나눠 PR 설명을 남기는 연습을 더 해보는 것이 좋다.')
+        hints.append('?� 리퀘스??기록???��? ?�이???�업 ?�위�??�눠 PR ?�명???�기???�습?????�보??것이 좋다.')
 
     if issue_events == 0:
-        hints.append('다음 작업에서는 이슈를 먼저 열고 작업 목표와 완료 기준을 짧게 남겨보는 것이 좋다.')
+        hints.append('?�음 ?�업?�서???�슈�?먼�? ?�고 ?�업 목표?� ?�료 기�???짧게 ?�겨보는 것이 좋다.')
     elif issue_events <= 2:
-        hints.append('이슈 기록이 적은 편이니 작업 전후 메모를 이슈나 댓글로 남겨 맥락을 더 또렷하게 만드는 것이 좋다.')
+        hints.append('?�슈 기록???��? ?�이???�업 ?�후 메모�??�슈???��?�??�겨 맥락?????�렷?�게 만드??것이 좋다.')
 
     if activity_summary['active_days_30d'] <= 8:
-        hints.append('활동 일수가 아주 높은 편은 아니니, 주 3회 정도 짧은 커밋 루틴을 만드는 방향이 좋다.')
+        hints.append('?�동 ?�수가 ?�주 ?��? ?��? ?�니?? �?3???�도 짧�? 커밋 루틴??만드??방향??좋다.')
 
     if top_language and languages.get(top_language, 0) >= max(3, len(known_languages)):
         suggested_language = language_followups.get(top_language)
         if suggested_language and suggested_language not in known_languages:
             hints.append(
-                f'지금은 {top_language} 중심 흐름이 강하니 다음 작업에서는 {suggested_language}로 작은 기능 하나를 옮겨 보며 폭을 넓혀보는 것도 좋다.'
+                f'지금�? {top_language} 중심 ?�름??강하???�음 ?�업?�서??{suggested_language}�??��? 기능 ?�나�???�� 보며 ??�� ?��?보는 것도 좋다.'
             )
 
     if not hints and top_language:
-        hints.append(f'지금은 {top_language} 중심의 흐름이 뚜렷하니, 대표 프로젝트 하나의 README나 작업 기록을 더 선명하게 다듬는 것이 좋다.')
+        hints.append(f'지금�? {top_language} 중심???�름???�렷?�니, ?�???�로?�트 ?�나??README???�업 기록?????�명?�게 ?�듬??것이 좋다.')
 
     if not hints:
-        hints.append('다음 작업에서는 README, 커밋 메시지, 작업 기록 중 하나를 더 또렷하게 남겨 활동의 맥락이 보이게 하는 것이 좋다.')
+        hints.append('?�음 ?�업?�서??README, 커밋 메시지, ?�업 기록 �??�나�????�렷?�게 ?�겨 ?�동??맥락??보이�??�는 것이 좋다.')
 
     return hints[:4]
 
@@ -496,33 +496,33 @@ def build_ai_prompt(
     style_notes = build_style_notes(username, activity_summary, event_types)
 
     return f"""
-너는 IT 서비스의 코드 분석 봇이다.
-아래 제공된 [분석 데이터] 문장들을 바탕으로, 자연스러운 한국어 서비스 안내문구를 JSON 형식으로만 작성해라.
+?�는 IT ?�비?�의 코드 분석 봇이??
+?�래 ?�공??[분석 ?�이?? 문장?�을 바탕?�로, ?�연?�러???�국???�비???�내문구�?JSON ?�식?�로�??�성?�라.
 
-[분석 데이터]
+[분석 ?�이??
 - 강점: {strength_text}
-- 보완점: {improvement_text}
-- 제안: {recommendation_text}
+- 보완?? {improvement_text}
+- ?�안: {recommendation_text}
 
-[문장 스타일]
-- 톤: {style_notes['tone']}
+[문장 ?��???
+- ?? {style_notes['tone']}
 - headline: {style_notes['headline_rule']}
 - strength: {style_notes['strength_rule']}
 
-[작성 규칙]
-1. [분석 데이터]에 없는 내용을 지어내지 마라.
-2. "초보 개발자", "활동을 시작하셨군요", "仓库" 같은 어색한 표현은 절대 금지한다. 저장소, 레포지토리처럼 자연스러운 표현만 써라.
-3. 숫자를 기계적으로 나열하지 말고, 의미를 풀어서 설명해라.
-4. headline, strength, improvement, next_step은 서로 다른 역할로 작성해라.
-5. improvement는 [보완점] 첫 문장을 기준으로 작성하고, next_step은 [제안] 첫 문장을 기준으로 작성해라.
-6. next_step에서는 push를 더 하라고 권하지 말고, [제안]에 있는 구체 행동만 추천해라.
-7. 아래 표현을 그대로 반복하지 말고, 같은 뜻이라도 새로운 문장으로 다시 써라:
-    - 최근 30일 공개 활동이 아직 많지 않아요.
-    - 최근 한 달 동안 꾸준히 코드를 올리고 있어요.
-    - 최근 30일 활동이 비교적 꾸준한 편이에요.
-8. JSON 이외의 텍스트는 절대 출력하지 마라.
+[?�성 규칙]
+1. [분석 ?�이?????�는 ?�용??지?�내지 마라.
+2. "초보 개발??, "?�동???�작?�셨군요", "仓库" 같�? ?�색???�현?� ?��? 금�??�다. ?�?�소, ?�포지?�리처럼 ?�연?�러???�현�??�라.
+3. ?�자�?기계?�으�??�열?��? 말고, ?��?�??�?�서 ?�명?�라.
+4. headline, strength, improvement, next_step?� ?�로 ?�른 ??���??�성?�라.
+5. improvement??[보완?? �?문장??기�??�로 ?�성?�고, next_step?� [?�안] �?문장??기�??�로 ?�성?�라.
+6. next_step?�서??push�????�라�?권하지 말고, [?�안]???�는 구체 ?�동�?추천?�라.
+7. ?�래 ?�현??그�?�?반복?��? 말고, 같�? ?�이?�도 ?�로??문장?�로 ?�시 ?�라:
+    - 최근 30??공개 ?�동???�직 많�? ?�아??
+    - 최근 ?????�안 꾸�???코드�??�리�??�어??
+    - 최근 30???�동??비교??꾸�????�이?�요.
+8. JSON ?�외???�스?�는 ?��? 출력?��? 마라.
 
-[응답 JSON 형식]
+[?�답 JSON ?�식]
 {{
     "headline": "문장",
     "strength": "문장",
@@ -633,13 +633,13 @@ def generate_feedback_with_groq(
 def normalize_username_or_400(username: str):
     normalized_username = username.strip()
     if not normalized_username:
-        raise HTTPException(status_code=400, detail='GitHub 아이디가 비어 있습니다.')
+        raise HTTPException(status_code=400, detail='GitHub ?�이?��? 비어 ?�습?�다.')
     return normalized_username
 
 
 def raise_for_profile_error(username: str, response: httpx.Response):
     if response.status_code == 404:
-        raise HTTPException(status_code=404, detail='해당 GitHub 사용자를 찾지 못했습니다.')
+        raise HTTPException(status_code=404, detail='?�당 GitHub ?�용?��? 찾�? 못했?�니??')
 
     if response.status_code == 403:
         rate_limit_remaining = response.headers.get('x-ratelimit-remaining')
@@ -647,18 +647,18 @@ def raise_for_profile_error(username: str, response: httpx.Response):
             'GitHub profile request blocked '
             f'for {username}: remaining={rate_limit_remaining}'
         )
-        detail = 'GitHub 프로필 정보를 불러오지 못했습니다.'
+        detail = 'GitHub ?�로???�보�?불러?��? 못했?�니??'
         if rate_limit_remaining == '0':
-            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+            detail = 'GitHub API ?�청 ?�도???�달?�습?�다. ?�시 ???�시 ?�도?�주?�요.'
         elif not GITHUB_TOKEN:
             detail = (
-                'GitHub 토큰이 설정되지 않아 요청이 제한되고 있습니다. '
-                '서버 환경변수를 확인해주세요.'
+                'GitHub ?�큰???�정?��? ?�아 ?�청???�한?�고 ?�습?�다. '
+                '?�버 ?�경변?��? ?�인?�주?�요.'
             )
         else:
             detail = (
-                'GitHub 토큰이 없거나 만료되었을 수 있습니다. '
-                '서버 환경변수를 확인해주세요.'
+                'GitHub ?�큰???�거??만료?�었?????�습?�다. '
+                '?�버 ?�경변?��? ?�인?�주?�요.'
             )
         raise HTTPException(status_code=403, detail=detail)
 
@@ -669,7 +669,7 @@ def raise_for_profile_error(username: str, response: httpx.Response):
         )
         raise HTTPException(
             status_code=response.status_code,
-            detail='GitHub 프로필 정보를 불러오지 못했습니다.',
+            detail='GitHub ?�로???�보�?불러?��? 못했?�니??',
         )
 
 
@@ -680,11 +680,11 @@ def raise_for_repos_error(username: str, response: httpx.Response):
             'GitHub repos request blocked '
             f'for {username}: remaining={rate_limit_remaining}'
         )
-        detail = '레포지토리 목록을 불러오지 못했습니다.'
+        detail = '?�포지?�리 목록??불러?��? 못했?�니??'
         if rate_limit_remaining == '0':
-            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+            detail = 'GitHub API ?�청 ?�도???�달?�습?�다. ?�시 ???�시 ?�도?�주?�요.'
         else:
-            detail = '레포지토리 목록 요청이 제한되었습니다. GitHub 토큰 상태를 확인해주세요.'
+            detail = '?�포지?�리 목록 ?�청???�한?�었?�니?? GitHub ?�큰 ?�태�??�인?�주?�요.'
         raise HTTPException(status_code=403, detail=detail)
 
     if response.status_code != 200:
@@ -694,13 +694,13 @@ def raise_for_repos_error(username: str, response: httpx.Response):
         )
         raise HTTPException(
             status_code=response.status_code,
-            detail='레포지토리 목록을 불러오지 못했습니다. GitHub 토큰 상태를 확인해주세요.',
+            detail='?�포지?�리 목록??불러?��? 못했?�니?? GitHub ?�큰 ?�태�??�인?�주?�요.',
         )
 
 
 def raise_for_events_error(username: str, response: httpx.Response):
     if response.status_code == 404:
-        raise HTTPException(status_code=404, detail='해당 GitHub 사용자를 찾지 못했습니다.')
+        raise HTTPException(status_code=404, detail='?�당 GitHub ?�용?��? 찾�? 못했?�니??')
 
     if response.status_code == 403:
         rate_limit_remaining = response.headers.get('x-ratelimit-remaining')
@@ -708,18 +708,18 @@ def raise_for_events_error(username: str, response: httpx.Response):
             'GitHub events request blocked '
             f'for {username}: remaining={rate_limit_remaining}'
         )
-        detail = 'GitHub 활동 이벤트를 불러오지 못했습니다.'
+        detail = 'GitHub ?�동 ?�벤?��? 불러?��? 못했?�니??'
         if rate_limit_remaining == '0':
-            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+            detail = 'GitHub API ?�청 ?�도???�달?�습?�다. ?�시 ???�시 ?�도?�주?�요.'
         elif not GITHUB_TOKEN:
             detail = (
-                'GitHub 토큰이 설정되지 않아 활동 이벤트 요청이 제한되고 있습니다. '
-                '서버 환경변수를 확인해주세요.'
+                'GitHub ?�큰???�정?��? ?�아 ?�동 ?�벤???�청???�한?�고 ?�습?�다. '
+                '?�버 ?�경변?��? ?�인?�주?�요.'
             )
         else:
             detail = (
-                'GitHub 토큰이 만료되었거나 활동 이벤트 요청이 제한되었습니다. '
-                '서버 환경변수를 확인해주세요.'
+                'GitHub ?�큰??만료?�었거나 ?�동 ?�벤???�청???�한?�었?�니?? '
+                '?�버 ?�경변?��? ?�인?�주?�요.'
             )
         raise HTTPException(status_code=403, detail=detail)
 
@@ -729,7 +729,7 @@ def raise_for_events_error(username: str, response: httpx.Response):
     )
     raise HTTPException(
         status_code=response.status_code,
-        detail='GitHub 활동 이벤트를 불러오지 못했습니다.',
+        detail='GitHub ?�동 ?�벤?��? 불러?��? 못했?�니??',
     )
 
 
@@ -899,8 +899,8 @@ async def fetch_analysis_payload(username: str, days: int):
         raise HTTPException(
             status_code=503,
             detail=(
-                'GitHub API 연결이 일시적으로 불안정합니다. '
-                '첫 요청 직후이거나 네트워크가 잠시 흔들릴 수 있으니 10~20초 뒤 다시 시도해주세요.'
+                'GitHub API ?�결???�시?�으�?불안?�합?�다. '
+                '�??�청 직후?�거???�트?�크가 ?�시 ?�들�????�으??10~20�????�시 ?�도?�주?�요.'
             ),
         ) from exc
 
@@ -983,7 +983,7 @@ async def health():
 
 @app.get('/api/analyze-legacy/{username}', deprecated=True)
 async def analyze_user_legacy(username: str):
-    # 레거시 엔드포인트는 호환성 유지를 위해 남겨두고, 실제 처리는 최신 분석 경로를 사용합니다.
+    # ?�거???�드?�인?�는 ?�환???��?�??�해 ?�겨?�고, ?�제 처리??최신 분석 경로�??�용?�니??
     return await analyze_user(username=username, days=30)
 
 
@@ -1013,3 +1013,4 @@ async def get_feedback(
     feedback_payload = await asyncio.to_thread(build_feedback_payload, analysis_payload)
     set_cache_entry(feedback_cache, cache_key, feedback_payload)
     return feedback_payload
+

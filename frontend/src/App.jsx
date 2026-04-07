@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
-import { deleteSavedResult, fetchSavedResults, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges } from './lib/supabase'
+import { deleteSavedResult, ensureUserProfile, fetchSavedResults, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges, updateUserNickname } from './lib/supabase'
 import { AuthMenu } from './components/AuthMenu'
 import { MyPage } from './components/MyPage'
 import { ProfileCard } from './components/ProfileCard'
@@ -280,6 +280,10 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true)
   const [authActionLoading, setAuthActionLoading] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
+  const [userProfile, setUserProfile] = useState(null)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
   const [saveLoading, setSaveLoading] = useState(false)
   const [savedResults, setSavedResults] = useState([])
   const [savedResultsLoading, setSavedResultsLoading] = useState(false)
@@ -340,6 +344,27 @@ function App() {
       )
     } finally {
       setSavedResultsLoading(false)
+    }
+  }, [])
+
+  const loadUserProfile = useCallback(async (activeSession) => {
+    if (!activeSession) {
+      setUserProfile(null)
+      setProfileMessage('')
+      return
+    }
+
+    setProfileLoading(true)
+
+    try {
+      const nextProfile = await ensureUserProfile(activeSession)
+      setUserProfile(nextProfile)
+    } catch (profileError) {
+      setProfileMessage(
+        profileError.message || '프로필 정보를 불러오지 못했습니다. profiles 테이블 설정을 확인해주세요.',
+      )
+    } finally {
+      setProfileLoading(false)
     }
   }, [])
 
@@ -470,6 +495,8 @@ function App() {
       await signOutFromSupabase()
       setSavedResults([])
       setSavedResultsError('')
+      setUserProfile(null)
+      setProfileMessage('')
       if (route === 'mypage') {
         navigateToLanding()
       }
@@ -522,6 +549,27 @@ function App() {
       setSaveLoading(false)
     }
   }
+
+  const handleSaveNickname = async (nickname) => {
+    if (!session) {
+      setProfileMessage('로그인 후 닉네임을 변경할 수 있습니다.')
+      return
+    }
+
+    setProfileSaving(true)
+    setProfileMessage('')
+
+    try {
+      const nextProfile = await updateUserNickname(session, nickname)
+      setUserProfile(nextProfile)
+      setProfileMessage('닉네임이 저장되었습니다.')
+    } catch (profileError) {
+      setProfileMessage(profileError.message || '닉네임을 저장하지 못했습니다.')
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
   const handleOpenSavedResult = (savedResult) => {
     const snapshot = savedResult.snapshot
     if (!snapshot) {
@@ -607,6 +655,9 @@ function App() {
         }
 
         setSession(currentSession)
+        if (currentSession) {
+          void loadUserProfile(currentSession)
+        }
         if (readCurrentRoute() === 'mypage' && currentSession) {
           void loadSavedResults(currentSession)
         }
@@ -630,8 +681,11 @@ function App() {
       setAuthActionLoading(false)
 
       if (nextSession) {
+        void loadUserProfile(nextSession)
         void loadSavedResults(nextSession)
       } else {
+        setUserProfile(null)
+        setProfileMessage('')
         setSavedResults([])
         setSavedResultsError('')
       }
@@ -641,7 +695,7 @@ function App() {
       mounted = false
       unsubscribe()
     }
-  }, [loadSavedResults])
+  }, [loadSavedResults, loadUserProfile])
 
   useEffect(() => {
     if (!activePolicy) {
@@ -665,6 +719,22 @@ function App() {
     }
   }, [activePolicy])
 
+  useEffect(() => {
+    if (profileMessage !== '닉네임이 저장되었습니다.') {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setProfileMessage((currentMessage) =>
+        currentMessage === '닉네임이 저장되었습니다.' ? '' : currentMessage,
+      )
+    }, 2200)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [profileMessage])
+
   return (
     <main className={`app-shell ${route === 'result' ? 'result-shell' : route === 'mypage' ? 'mypage-shell' : 'landing-shell'}`}>
       {route === 'landing' ? (
@@ -673,8 +743,9 @@ function App() {
             {authMessage ? <p className="auth-status-message">{authMessage}</p> : null}
             <AuthMenu
               session={session}
+              profile={userProfile}
               loading={authLoading || authActionLoading}
-              onLogin={handleGoogleLogin}
+              onGoogleLogin={handleGoogleLogin}
               onLogout={handleLogout}
               onNavigateToMyPage={navigateToMyPage}
             />
@@ -691,8 +762,9 @@ function App() {
             {authMessage ? <p className="auth-status-message">{authMessage}</p> : null}
             <AuthMenu
               session={session}
+              profile={userProfile}
               loading={authLoading || authActionLoading}
-              onLogin={handleGoogleLogin}
+              onGoogleLogin={handleGoogleLogin}
               onLogout={handleLogout}
               onNavigateToMyPage={navigateToMyPage}
             />
@@ -745,12 +817,17 @@ function App() {
       {route === 'mypage' ? (
         <MyPage
           session={session}
+          profile={userProfile}
+          profileLoading={profileLoading}
+          profileSaving={profileSaving}
+          profileMessage={profileMessage}
           items={savedResults}
           loading={savedResultsLoading}
           error={savedResultsError}
           onRefresh={() => loadSavedResults(session)}
           onOpenResult={handleOpenSavedResult}
-          onLogin={handleGoogleLogin}
+          onGoogleLogin={handleGoogleLogin}
+          onSaveNickname={handleSaveNickname}
           onDeleteResult={handleDeleteSavedResult}
           deletingId={deletingSavedResultId}
         />
