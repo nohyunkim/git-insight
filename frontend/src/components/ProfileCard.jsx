@@ -262,6 +262,10 @@ function buildCoverageNote(summary) {
     return ''
   }
 
+  if ((summary?.window_days ?? 30) > 90) {
+    return `${buildWindowLabel(summary)} 분석은 GitHub 공개 Events API 조회 한계 때문에 오래된 이벤트가 일부 빠질 수 있습니다. 6개월·1년 결과는 참고용으로 보는 편이 안전합니다.`
+  }
+
   return `${buildWindowLabel(summary)} 이벤트는 GitHub 공개 Events API 제공 범위까지만 반영됩니다. 활동량이 많은 계정은 장기 기간에서 일부 오래된 이벤트가 제외될 수 있습니다.`
 }
 

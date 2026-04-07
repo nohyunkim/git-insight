@@ -21,6 +21,7 @@ PROJECT_ROOT = BASE_DIR.parent
 GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 ALLOWED_WINDOWS = {7, 30, 90, 180, 365}
 MAX_GITHUB_EVENT_PAGES = 3
+EVENT_API_RELIABLE_WINDOW_DAYS = 90
 FEEDBACK_PROMPT_VERSION = 'v2'
 
 # 실행 위치와 상관없이 루트 또는 backend 폴더의 .env를 읽습니다.
@@ -697,6 +698,41 @@ def raise_for_repos_error(username: str, response: httpx.Response):
         )
 
 
+def raise_for_events_error(username: str, response: httpx.Response):
+    if response.status_code == 404:
+        raise HTTPException(status_code=404, detail='해당 GitHub 사용자를 찾지 못했습니다.')
+
+    if response.status_code == 403:
+        rate_limit_remaining = response.headers.get('x-ratelimit-remaining')
+        print(
+            'GitHub events request blocked '
+            f'for {username}: remaining={rate_limit_remaining}'
+        )
+        detail = 'GitHub 활동 이벤트를 불러오지 못했습니다.'
+        if rate_limit_remaining == '0':
+            detail = 'GitHub API 요청 한도에 도달했습니다. 잠시 뒤 다시 시도해주세요.'
+        elif not GITHUB_TOKEN:
+            detail = (
+                'GitHub 토큰이 설정되지 않아 활동 이벤트 요청이 제한되고 있습니다. '
+                '서버 환경변수를 확인해주세요.'
+            )
+        else:
+            detail = (
+                'GitHub 토큰이 만료되었거나 활동 이벤트 요청이 제한되었습니다. '
+                '서버 환경변수를 확인해주세요.'
+            )
+        raise HTTPException(status_code=403, detail=detail)
+
+    print(
+        f'GitHub events request failed for {username}: '
+        f'status={response.status_code}'
+    )
+    raise HTTPException(
+        status_code=response.status_code,
+        detail='GitHub 활동 이벤트를 불러오지 못했습니다.',
+    )
+
+
 def summarize_analysis(
     username: str,
     user_data: dict,
@@ -743,7 +779,7 @@ def summarize_analysis(
         'total_events_30d': len(recent_window_events),
         'push_events_30d': summary_event_types.get('PushEvent', 0),
         'active_days_30d': len(active_days),
-        'event_data_incomplete': events_incomplete,
+        'event_data_incomplete': events_incomplete or days > EVENT_API_RELIABLE_WINDOW_DAYS,
     }
 
     feedback = build_feedback(
@@ -789,7 +825,7 @@ async def fetch_user_events(client: httpx.AsyncClient, username: str, headers: d
         )
         if response.status_code != 200:
             if page == 1:
-                return response, []
+                return response, [], False
             break
 
         page_events = response.json()
@@ -870,11 +906,10 @@ async def fetch_analysis_payload(username: str, days: int):
 
     raise_for_profile_error(username, user_res)
     raise_for_repos_error(username, repos_res)
+    if events_res is not None:
+        raise_for_events_error(username, events_res)
 
     user_data = user_res.json()
-    if events_res is not None:
-        events_data = []
-        events_incomplete = False
     payload = summarize_analysis(
         username,
         user_data,
