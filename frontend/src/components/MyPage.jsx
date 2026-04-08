@@ -324,20 +324,20 @@ function MyPage({
                 >
                   <EditIcon />
                 </button>
-              </div>
-            <div className="mypage-profile-subrow">
-              <p>{session.user?.email || '소셜 로그인 계정'}</p>
-              <button
-                type="button"
-                className="mypage-icon-button"
-                onClick={onRefresh}
-                disabled={loading || profileLoading}
-                aria-label={loading || profileLoading ? '불러오는 중' : '새로고침'}
-                title={loading || profileLoading ? '불러오는 중' : '새로고침'}
-              >
-                <RefreshIcon />
-              </button>
             </div>
+            <p className="mypage-profile-email">{session.user?.email || '소셜 로그인 계정'}</p>
+          </div>
+          <div className="mypage-profile-actions">
+            <button
+              type="button"
+              className="mypage-icon-button"
+              onClick={onRefresh}
+              disabled={loading || profileLoading}
+              aria-label={loading || profileLoading ? '불러오는 중' : '새로고침'}
+              title={loading || profileLoading ? '불러오는 중' : '새로고침'}
+            >
+              <RefreshIcon />
+            </button>
           </div>
         </div>
 

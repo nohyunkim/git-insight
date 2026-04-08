@@ -1198,12 +1198,20 @@
 .mypage-profile-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
 }
 
 .mypage-profile-meta {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.mypage-profile-actions {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  justify-content: flex-end;
 }
 
 .mypage-profile-avatar {
@@ -1233,13 +1241,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.mypage-profile-subrow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  margin-bottom: 4px;
 }
 
 .mypage-profile-edit-button {
@@ -1272,6 +1274,12 @@
 .mypage-profile-head p {
   margin: 0;
   color: #aab9cf;
+}
+
+.mypage-profile-email {
+  max-width: 100%;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .mypage-profile-form {
@@ -2330,10 +2338,6 @@
     gap: 8px;
   }
 
-  .mypage-profile-subrow {
-    align-items: flex-start;
-  }
-
   .mypage-calendar-cell {
     min-height: 110px;
     padding: 10px;
@@ -2417,9 +2421,8 @@
     align-items: flex-start;
   }
 
-  .mypage-profile-subrow {
-    flex-direction: column;
-    align-items: flex-start;
+  .mypage-profile-actions {
+    align-self: flex-start;
   }
 
   .mypage-day-sheet-backdrop {
