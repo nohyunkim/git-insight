@@ -1,0 +1,267 @@
+@media (max-width: 1024px) {
+  .landing-step-grid,
+  .detail-grid,
+  .editorial-grid,
+  .signal-grid,
+  .practical-grid,
+  .content-link-grid,
+  .result-editorial-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-card-landing .search-row,
+  .search-row-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .search-row-compact .search-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell,
+  .landing-shell,
+  .result-shell {
+    width: min(100%, calc(100% - 20px));
+    padding: 20px 0 44px;
+  }
+
+  .landing-hero {
+    padding-top: 20px;
+  }
+
+  .app-topbar,
+  .mypage-header,
+  .mypage-calendar-header,
+  .mypage-day-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-topbar-landing {
+    align-items: stretch;
+  }
+
+  .app-topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .landing-brand-mark {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
+  }
+
+  .landing-brand-mark img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .landing-kicker {
+    margin-bottom: 12px;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+  }
+
+  .landing-hero h1 {
+    font-size: clamp(3rem, 15vw, 4.2rem);
+    letter-spacing: -0.05em;
+  }
+
+  .landing-subtitle {
+    width: min(100%, 30rem);
+    margin-top: 16px;
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+
+  .search-card-landing {
+    margin-top: 26px;
+  }
+
+  .search-row,
+  .profile-top,
+  .metric-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-actions,
+  .search-row-compact .search-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .empty-state,
+  .profile-card {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .editorial-card,
+  .signal-card,
+  .practical-card,
+  .result-editorial,
+  .result-editorial-card {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .result-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mypage-empty,
+  .saved-result-card {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .mypage-calendar-panel,
+  .mypage-day-sheet {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .mypage-calendar-grid {
+    gap: 8px;
+  }
+
+  .mypage-calendar-cell {
+    min-height: 110px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .result-action-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .result-menu-wrap {
+    width: 100%;
+  }
+
+  .result-menu-buttons {
+    width: 100%;
+  }
+
+  .result-menu-trigger {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .result-dropdown-menu {
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 10px);
+    min-width: 100%;
+  }
+
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .input-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .input-prefix {
+    border-right: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    padding: 12px 18px 0;
+  }
+
+  .input-wrapper input {
+    min-height: 56px;
+  }
+
+  .landing-footer-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, auto));
+    justify-content: center;
+    column-gap: 18px;
+    row-gap: 8px;
+  }
+
+  .landing-footer-links > * {
+    padding: 0;
+    font-size: 0.88rem;
+    text-align: center;
+  }
+
+  .landing-footer-links > *:not(:last-child)::after {
+    content: none;
+  }
+
+  .policy-modal-backdrop {
+    padding: 12px;
+  }
+
+  .policy-modal {
+    padding: 18px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mypage-profile-head {
+    align-items: flex-start;
+  }
+
+  .mypage-profile-actions {
+    align-self: flex-start;
+  }
+
+  .mypage-day-sheet-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .mypage-day-sheet {
+    width: 100%;
+    height: min(82vh, 760px);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .mypage-calendar-weekdays span {
+    font-size: 0.68rem;
+  }
+
+  .mypage-calendar-grid {
+    gap: 6px;
+  }
+
+  .mypage-calendar-cell {
+    min-height: 92px;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .mypage-calendar-date-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.84rem;
+  }
+
+  .mypage-calendar-chip,
+  .mypage-calendar-more {
+    min-height: 24px;
+    padding: 0 7px;
+    font-size: 0.65rem;
+  }
+}
