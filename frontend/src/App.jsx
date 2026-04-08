@@ -17,6 +17,7 @@ const PERIOD_OPTIONS = [
 
 const DEFAULT_DAYS = 30
 const ALLOWED_PERIOD_DAYS = new Set(PERIOD_OPTIONS.map((option) => option.days))
+const TRANSIENT_AUTH_MESSAGES = new Set(['결과를 저장했어요.', '저장한 결과를 삭제했습니다.'])
 const FEEDBACK_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSdjVwQ8UH1s-Oc4szZ5N1Bej49aiMBBRPhOg7HxZngZcz4lpw/viewform?usp=publish-editor'
 
@@ -724,6 +725,20 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [activePolicy])
+
+  useEffect(() => {
+    if (!TRANSIENT_AUTH_MESSAGES.has(authMessage)) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setAuthMessage((currentMessage) => (TRANSIENT_AUTH_MESSAGES.has(currentMessage) ? '' : currentMessage))
+    }, 2200)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [authMessage])
 
   useEffect(() => {
     if (profileMessage !== '닉네임이 저장되었습니다.') {
