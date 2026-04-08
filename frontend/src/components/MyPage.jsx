@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function EditIcon() {
   return (
@@ -34,6 +36,51 @@ function RefreshIcon() {
   )
 }
 
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="m14.5 6-6 6 6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="m9.5 6 6 6-6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="m14.5 6-6 6 6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function formatSavedDate(value) {
   if (!value) {
     return ''
@@ -53,6 +100,60 @@ function formatSavedDate(value) {
   }).format(date)
 }
 
+function formatDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getSavedDateKey(savedResult) {
+  const candidate =
+    savedResult?.analysis_date ||
+    savedResult?.analysis_generated_at ||
+    savedResult?.snapshot?.generated_at ||
+    savedResult?.created_at
+
+  const date = new Date(candidate)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return formatDateKey(date)
+}
+
+function getMonthStart(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function addMonths(date, amount) {
+  return new Date(date.getFullYear(), date.getMonth() + amount, 1)
+}
+
+function isSameMonth(left, right) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth()
+  )
+}
+
+function formatMonthLabel(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
+function formatShortSavedLabel(savedResult) {
+  const username = savedResult?.github_username || savedResult?.snapshot?.username || 'result'
+  const days = savedResult?.window_days || savedResult?.snapshot?.stats?.activity_summary?.window_days || 30
+  return `${username} ${days}일`
+}
+
 function getSummary(savedResult) {
   const summary = savedResult?.snapshot?.stats?.activity_summary ?? {}
   const pushes = savedResult?.snapshot?.stats?.recent_push_events ?? 0
@@ -65,6 +166,26 @@ function getSummary(savedResult) {
       savedResult?.snapshot?.feedback?.headline ||
       '저장한 분석 결과입니다.',
   }
+}
+
+function buildCalendarDays(monthDate, itemsByDate) {
+  const monthStart = getMonthStart(monthDate)
+  const monthStartDay = monthStart.getDay()
+  const firstVisible = new Date(monthStart)
+  firstVisible.setDate(monthStart.getDate() - monthStartDay)
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(firstVisible)
+    date.setDate(firstVisible.getDate() + index)
+    const dateKey = formatDateKey(date)
+
+    return {
+      date,
+      dateKey,
+      items: itemsByDate.get(dateKey) ?? [],
+      isCurrentMonth: isSameMonth(date, monthDate),
+    }
+  })
 }
 
 function MyPage({
@@ -85,6 +206,76 @@ function MyPage({
 }) {
   const [nicknameInput, setNicknameInput] = useState('')
   const [editingNickname, setEditingNickname] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState(null)
+  const [selectedDateKey, setSelectedDateKey] = useState('')
+
+  const groupedByDate = useMemo(() => {
+    const map = new Map()
+
+    items.forEach((item) => {
+      const dateKey = getSavedDateKey(item)
+      if (!dateKey) {
+        return
+      }
+
+      const current = map.get(dateKey) ?? []
+      current.push(item)
+      map.set(dateKey, current)
+    })
+
+    for (const value of map.values()) {
+      value.sort((left, right) => {
+        const leftTime = new Date(left.analysis_generated_at || left.created_at || 0).getTime()
+        const rightTime = new Date(right.analysis_generated_at || right.created_at || 0).getTime()
+        return rightTime - leftTime
+      })
+    }
+
+    return map
+  }, [items])
+
+  const monthKeysWithItems = useMemo(() => {
+    const keys = new Set()
+
+    groupedByDate.forEach((_items, dateKey) => {
+      keys.add(dateKey.slice(0, 7))
+    })
+
+    return keys
+  }, [groupedByDate])
+
+  const latestDateKey = items.length ? getSavedDateKey(items[0]) : ''
+  const resolvedMonth = useMemo(() => {
+    if (selectedMonth instanceof Date && !Number.isNaN(selectedMonth.getTime())) {
+      return selectedMonth
+    }
+
+    if (latestDateKey) {
+      return getMonthStart(new Date(latestDateKey))
+    }
+
+    return getMonthStart(new Date())
+  }, [latestDateKey, selectedMonth])
+
+  const monthKey = formatDateKey(resolvedMonth).slice(0, 7)
+  const availableKeysInMonth = useMemo(
+    () =>
+      [...groupedByDate.keys()]
+        .filter((dateKey) => dateKey.startsWith(monthKey))
+        .sort(),
+    [groupedByDate, monthKey],
+  )
+
+  const selectedDateItems = groupedByDate.get(selectedDateKey) ?? []
+  const calendarDays = useMemo(
+    () => buildCalendarDays(resolvedMonth, groupedByDate),
+    [groupedByDate, resolvedMonth],
+  )
+
+  const savedDayCountThisMonth = useMemo(() => {
+    return availableKeysInMonth.length
+  }, [availableKeysInMonth.length])
+  const isDaySheetOpen = Boolean(selectedDateKey)
 
   if (!session) {
     return (
@@ -108,10 +299,9 @@ function MyPage({
       <div className="mypage-header">
         <div>
           <p className="mypage-kicker">My Page</p>
-          <h2>프로필과 저장한 GitHub 분석 기록</h2>
+          <h2>저장한 GitHub 분석 기록을 달력으로 관리</h2>
           <p>
-            Google 로그인 정보를 바탕으로 프로필을 보여주고, 닉네임을 원하는 이름으로 바꿔가며
-            계속 사용할 수 있습니다.
+            저장된 결과를 날짜 중심으로 훑고, 특정 날짜를 눌러 그날 저장한 기록을 다시 비교할 수 있습니다.
           </p>
         </div>
 
@@ -214,45 +404,168 @@ function MyPage({
       {!loading && items.length === 0 ? (
         <div className="mypage-empty">
           <h3>아직 저장한 결과가 없어요</h3>
-          <p>분석 결과 화면에서 저장 버튼을 누르면 여기에 기록이 쌓입니다.</p>
+          <p>분석 결과 화면에서 저장 버튼을 누르면 여기에 기록이 날짜별로 쌓입니다.</p>
         </div>
       ) : null}
 
       {!loading && items.length > 0 ? (
-        <div className="saved-results-grid">
-          {items.map((item) => {
-            const summary = getSummary(item)
+        <section className="mypage-calendar-shell">
+          <div className="mypage-calendar-panel">
+            <div className="mypage-calendar-header">
+              <div>
+                <p className="mypage-kicker">Archive</p>
+                <h3>{formatMonthLabel(resolvedMonth)}</h3>
+                <p>이달에 기록된 저장 날짜 {savedDayCountThisMonth}일</p>
+              </div>
 
-            return (
-              <article key={item.id} className="saved-result-card">
-                <div className="saved-result-meta">
-                  <span>{formatSavedDate(item.created_at)}</span>
-                  <span>{summary.days}일 기준</span>
-                </div>
-                <h3>{item.profile_name || item.github_username}</h3>
-                <p className="saved-result-username">@{item.github_username}</p>
-                <p className="saved-result-headline">{summary.headline}</p>
-                <p className="saved-result-stat">최근 Push 이벤트 {summary.pushes}개</p>
-                <div className="saved-result-actions">
+              <div className="mypage-calendar-nav">
+                <button
+                  type="button"
+                  className="mypage-calendar-nav-button"
+                  onClick={() => setSelectedMonth((current) => addMonths(current ?? resolvedMonth, -1))}
+                  aria-label="이전 달"
+                >
+                  <ChevronLeftIcon />
+                </button>
+                <button
+                  type="button"
+                  className="mypage-calendar-nav-button"
+                  onClick={() => setSelectedMonth((current) => addMonths(current ?? resolvedMonth, 1))}
+                  aria-label="다음 달"
+                >
+                  <ChevronRightIcon />
+                </button>
+              </div>
+            </div>
+
+            <div className="mypage-calendar-weekdays" aria-hidden="true">
+              {WEEKDAY_LABELS.map((label) => (
+                <span key={label}>{label}</span>
+              ))}
+            </div>
+
+            <div className="mypage-calendar-grid">
+              {calendarDays.map((day) => {
+                const isSelected = selectedDateKey === day.dateKey
+                const previewItems = day.items.slice(0, 1)
+
+                return (
                   <button
+                    key={day.dateKey}
                     type="button"
-                    className="mypage-primary-button"
-                    onClick={() => onOpenResult(item)}
+                    className={`mypage-calendar-cell${day.isCurrentMonth ? '' : ' is-muted'}${day.items.length ? ' has-items' : ''}${isSelected ? ' is-selected' : ''}`}
+                    onClick={() => {
+                      setSelectedDateKey(day.dateKey)
+                      if (!isSameMonth(day.date, resolvedMonth)) {
+                        setSelectedMonth(getMonthStart(day.date))
+                      }
+                    }}
                   >
-                    저장한 결과 열기
+                    <span className="mypage-calendar-date-number">{day.date.getDate()}</span>
+
+                    {day.items.length ? (
+                      <div className="mypage-calendar-labels">
+                        {previewItems.map((item) => (
+                          <span key={item.id} className="mypage-calendar-chip">
+                            {formatShortSavedLabel(item)}
+                          </span>
+                        ))}
+                        {day.items.length > previewItems.length ? (
+                          <span className="mypage-calendar-more">+{day.items.length - previewItems.length}</span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="mypage-calendar-empty-dot" aria-hidden="true" />
+                    )}
                   </button>
-                  <button
-                    type="button"
-                    className="mypage-secondary-button"
-                    onClick={() => onDeleteResult(item)}
-                    disabled={deletingId === item.id}
-                  >
-                    {deletingId === item.id ? '삭제 중...' : '삭제'}
-                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+        </section>
+      ) : null}
+
+      {isDaySheetOpen ? (
+        <div
+          className="mypage-day-sheet-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedDateKey('')
+            }
+          }}
+        >
+          <section className="mypage-day-sheet" role="dialog" aria-modal="true" aria-label="저장 기록 상세">
+            <div className="mypage-day-sheet-topbar">
+              <button
+                type="button"
+                className="mypage-day-sheet-back"
+                onClick={() => setSelectedDateKey('')}
+              >
+                <BackIcon />
+                <span>{`${resolvedMonth.getFullYear()}년 ${resolvedMonth.getMonth() + 1}월`}</span>
+              </button>
+              <span className="mypage-day-badge">
+                {monthKeysWithItems.has(selectedDateKey.slice(0, 7)) && selectedDateItems.length ? 'Saved' : 'Empty'}
+              </span>
+            </div>
+
+            <div className="mypage-day-header mypage-day-header-sheet">
+              <div>
+                <p className="mypage-kicker">Selected Date</p>
+                <h3>{selectedDateKey}</h3>
+                <p>
+                  {selectedDateItems.length
+                    ? `${selectedDateItems.length}개의 저장 기록이 있습니다.`
+                    : '이 날짜에는 저장된 기록이 없습니다.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mypage-day-list">
+              {selectedDateItems.length ? (
+                selectedDateItems.map((item) => {
+                  const summary = getSummary(item)
+
+                  return (
+                    <article key={item.id} className="saved-result-card saved-result-card-day">
+                      <div className="saved-result-meta">
+                        <span>{formatSavedDate(item.analysis_generated_at || item.created_at)}</span>
+                        <span>{summary.days}일 기준</span>
+                      </div>
+                      <h3>{item.profile_name || item.github_username}</h3>
+                      <p className="saved-result-username">@{item.github_username}</p>
+                      <p className="saved-result-headline">{summary.headline}</p>
+                      <p className="saved-result-stat">최근 Push 이벤트 {summary.pushes}개</p>
+                      <div className="saved-result-actions">
+                        <button
+                          type="button"
+                          className="mypage-primary-button"
+                          onClick={() => onOpenResult(item)}
+                        >
+                          결과 열기
+                        </button>
+                        <button
+                          type="button"
+                          className="mypage-secondary-button"
+                          onClick={() => onDeleteResult(item)}
+                          disabled={deletingId === item.id}
+                        >
+                          {deletingId === item.id ? '삭제 중...' : '삭제'}
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })
+              ) : (
+                <div className="mypage-day-empty">
+                  <h4>저장 기록이 없는 날짜예요</h4>
+                  <p>이 날짜에는 분석 결과를 저장하지 않았습니다. 다른 날짜를 눌러 기록을 확인해보세요.</p>
                 </div>
-              </article>
-            )
-          })}
+              )}
+            </div>
+          </section>
         </div>
       ) : null}
     </section>

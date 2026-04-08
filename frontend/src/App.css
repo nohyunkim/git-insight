@@ -1372,19 +1372,304 @@
   justify-items: start;
 }
 
-.saved-results-grid {
+.mypage-calendar-shell {
+  display: block;
+}
+
+.mypage-calendar-panel,
+.saved-result-card {
+  border: 1px solid rgba(101, 118, 150, 0.72);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(77, 113, 177, 0.14), transparent 26%),
+    linear-gradient(180deg, rgba(24, 31, 50, 0.98), rgba(30, 37, 58, 0.98));
+  box-shadow: 0 24px 56px rgba(7, 12, 24, 0.22);
+}
+
+.mypage-calendar-panel {
+  padding: 24px;
+}
+
+.mypage-calendar-header,
+.mypage-day-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.mypage-calendar-header h3,
+.mypage-day-header h3 {
+  margin: 0 0 8px;
+  color: #f4f7fb;
+  font-size: 1.6rem;
+}
+
+.mypage-calendar-header p,
+.mypage-day-header p {
+  margin: 0;
+  color: #9fb0c9;
+  line-height: 1.6;
+}
+
+.mypage-calendar-nav {
+  display: flex;
+  gap: 10px;
+}
+
+.mypage-calendar-nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(103, 129, 176, 0.72);
+  border-radius: 16px;
+  color: #eef4fb;
+  background: rgba(36, 45, 72, 0.72);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.mypage-calendar-nav-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(113, 143, 223, 0.88);
+  background: rgba(53, 67, 103, 0.84);
+}
+
+.mypage-calendar-nav-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mypage-calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.mypage-calendar-weekdays span {
+  color: #8ea6c9;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mypage-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.mypage-calendar-cell {
+  display: grid;
+  align-content: flex-start;
+  gap: 10px;
+  min-height: 122px;
+  padding: 12px;
+  border: 1px solid rgba(98, 116, 151, 0.46);
+  border-radius: 20px;
+  color: #eaf1fb;
+  background: rgba(34, 42, 64, 0.7);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.mypage-calendar-cell:hover {
+  transform: translateY(-1px);
+  border-color: rgba(122, 149, 208, 0.82);
+  background: rgba(42, 53, 82, 0.82);
+}
+
+.mypage-calendar-cell.is-muted {
+  opacity: 0.5;
+}
+
+.mypage-calendar-cell.has-items {
+  border-color: rgba(109, 173, 205, 0.58);
+  background:
+    radial-gradient(circle at top right, rgba(78, 174, 168, 0.18), transparent 30%),
+    rgba(34, 43, 67, 0.84);
+}
+
+.mypage-calendar-cell.is-selected {
+  border-color: rgba(134, 201, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(134, 201, 255, 0.35);
+}
+
+.mypage-calendar-date-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #f4f7fb;
+  background: rgba(17, 24, 39, 0.48);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.mypage-calendar-labels {
+  display: grid;
+  gap: 6px;
+}
+
+.mypage-calendar-chip,
+.mypage-calendar-more {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: #eef7ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mypage-calendar-chip {
+  background: rgba(83, 125, 215, 0.32);
+}
+
+.mypage-calendar-more {
+  width: fit-content;
+  background: rgba(76, 170, 143, 0.28);
+}
+
+.mypage-calendar-empty-dot {
+  width: 6px;
+  height: 6px;
+  margin-top: auto;
+  border-radius: 999px;
+  background: rgba(125, 143, 174, 0.4);
+}
+
+.mypage-day-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #e5f4ff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(74, 138, 204, 0.26);
+}
+
+.mypage-day-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px;
+  background: rgba(8, 12, 22, 0.46);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.mypage-day-sheet {
+  display: grid;
+  align-content: flex-start;
   gap: 18px;
+  width: min(540px, 100%);
+  height: min(100%, 820px);
+  padding: 22px;
+  border: 1px solid rgba(101, 118, 150, 0.72);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(77, 113, 177, 0.18), transparent 24%),
+    linear-gradient(180deg, rgba(20, 28, 46, 0.98), rgba(28, 35, 55, 0.98));
+  box-shadow: 0 30px 68px rgba(7, 12, 24, 0.36);
+  overflow: hidden;
+}
+
+.mypage-day-sheet-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.mypage-day-sheet-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 2px;
+  border: 0;
+  color: #dfe9f7;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.mypage-day-sheet-back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mypage-day-header-sheet {
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(91, 107, 142, 0.32);
+}
+
+.mypage-day-list {
+  display: grid;
+  gap: 14px;
+  align-content: flex-start;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.mypage-day-empty {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed rgba(112, 131, 168, 0.48);
+  border-radius: 22px;
+  color: #9fb0c9;
+  background: rgba(20, 28, 44, 0.48);
+}
+
+.mypage-day-empty h4,
+.saved-result-card h3 {
+  margin: 0;
+  color: #f4f7fb;
+}
+
+.mypage-day-empty p {
+  margin: 0;
+  line-height: 1.65;
 }
 
 .saved-result-card {
   display: grid;
   gap: 10px;
-  padding: 24px;
-  border: 1px solid rgba(94, 111, 143, 0.82);
+  padding: 20px;
+  background: rgba(33, 41, 64, 0.72);
+}
+
+.saved-result-card-day {
   border-radius: 24px;
-  background: rgba(33, 41, 64, 0.74);
 }
 
 .saved-result-meta {
@@ -1396,9 +1681,7 @@
 }
 
 .saved-result-card h3 {
-  margin: 0;
-  color: #f4f7fb;
-  font-size: 1.24rem;
+  font-size: 1.18rem;
 }
 
 .saved-result-username,
@@ -1906,7 +2189,6 @@
   .signal-grid,
   .practical-grid,
   .content-link-grid,
-  .saved-results-grid,
   .result-editorial-grid {
     grid-template-columns: 1fr;
   }
@@ -1938,7 +2220,9 @@
   }
 
   .app-topbar,
-  .mypage-header {
+  .mypage-header,
+  .mypage-calendar-header,
+  .mypage-day-header {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -2030,6 +2314,22 @@
     border-radius: 24px;
   }
 
+  .mypage-calendar-panel,
+  .mypage-day-sheet {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .mypage-calendar-grid {
+    gap: 8px;
+  }
+
+  .mypage-calendar-cell {
+    min-height: 110px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
   .result-action-buttons {
     width: 100%;
     justify-content: flex-start;
@@ -2099,5 +2399,46 @@
   .policy-modal {
     padding: 18px;
     border-radius: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mypage-day-sheet-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .mypage-day-sheet {
+    width: 100%;
+    height: min(82vh, 760px);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .mypage-calendar-weekdays span {
+    font-size: 0.68rem;
+  }
+
+  .mypage-calendar-grid {
+    gap: 6px;
+  }
+
+  .mypage-calendar-cell {
+    min-height: 92px;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .mypage-calendar-date-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.84rem;
+  }
+
+  .mypage-calendar-chip,
+  .mypage-calendar-more {
+    min-height: 24px;
+    padding: 0 7px;
+    font-size: 0.65rem;
   }
 }
