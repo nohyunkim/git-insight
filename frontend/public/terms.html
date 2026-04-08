@@ -14,6 +14,10 @@
       h1, h2 { margin-top: 0; color: #f8fafc; }
       p { margin: 0; }
       p + p { margin-top: 12px; }
+      section { margin-top: 16px; padding: 16px 18px; border: 1px solid #334155; border-radius: 14px; background: #182033; }
+      ul { margin: 12px 0 0; padding-left: 18px; }
+      li + li { margin-top: 8px; }
+      .kicker { margin-bottom: 10px; color: #8bc8ff; font-size: 0.84rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
     </style>
   </head>
   <body>
@@ -23,10 +27,55 @@
         <span>Git Insight</span>
       </a>
       <main>
+        <p class="kicker">Terms</p>
         <h1>이용약관</h1>
-        <p>본 서비스 이용 전 아래 조건을 확인해 주세요.</p>
-        <h2>서비스의 성격</h2>
-        <p>Git Insight는 공개 데이터를 기반으로 통계와 요약 정보를 제공하는 참고용 도구입니다.</p>
+        <p>본 서비스 이용 전 아래 조건을 확인해 주세요. Git Insight는 참고용 분석 서비스이며, 서비스 이용 시 아래 기준이 적용됩니다.</p>
+
+        <section>
+          <h2>1. 서비스의 성격</h2>
+          <p>
+            Git Insight는 공개 GitHub 데이터를 기반으로 통계와 요약 정보를 제공하는 참고용 도구입니다. 결과 화면과 AI 요약은
+            공개 기록을 해석하기 쉽게 정리한 자료이며, 절대적인 평가나 사실 보증으로 제공되지 않습니다.
+          </p>
+        </section>
+
+        <section>
+          <h2>2. 분석 범위와 한계</h2>
+          <p>
+            서비스는 공개 프로필, 공개 저장소, 공개 이벤트 정보를 기준으로 동작합니다. 비공개 저장소, 조직 내부 작업, 코드 품질,
+            실제 업무 난이도, 팀 내부 협업 맥락은 충분히 반영되지 않을 수 있습니다.
+          </p>
+        </section>
+
+        <section>
+          <h2>3. 로그인과 저장 기능</h2>
+          <p>
+            로그인 사용자는 Google 계정 기반 인증을 통해 결과를 저장하고, 마이페이지에서 다시 열람하거나 삭제할 수 있습니다.
+            저장 기능은 사용자가 직접 선택한 경우에만 동작하며, 저장된 기록은 날짜별 아카이브 관리 용도로 제공됩니다.
+          </p>
+        </section>
+
+        <section>
+          <h2>4. 이용자 책임</h2>
+          <ul>
+            <li>타인의 계정이나 공개 기록을 조회할 때에도 관련 법령과 플랫폼 정책을 침해하지 않아야 합니다.</li>
+            <li>서비스 결과를 채용, 평가, 심사 등의 단일 근거로 과도하게 사용하지 않는 것이 적절합니다.</li>
+            <li>문의나 오류 제보 시 제3자의 민감한 정보나 불필요한 개인정보는 포함하지 않는 것이 좋습니다.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>5. 서비스 변경과 중단</h2>
+          <p>
+            Git Insight는 기능 개선, 외부 API 변경, 운영 정책 조정에 따라 일부 기능이나 문구를 변경할 수 있습니다. 필요한 경우
+            저장 구조, 가이드 문서, 정책 문구도 함께 갱신될 수 있습니다.
+          </p>
+        </section>
+
+        <section>
+          <h2>6. 문의</h2>
+          <p>서비스 이용 중 문의나 오류 제보가 필요한 경우, 서비스 하단의 문의 경로를 통해 접수할 수 있습니다.</p>
+        </section>
       </main>
     </div>
   </body>
