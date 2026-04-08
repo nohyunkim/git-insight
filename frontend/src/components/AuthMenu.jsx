@@ -23,15 +23,6 @@ function GoogleMark() {
   )
 }
 
-function NaverMark() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="2" y="2" width="20" height="20" rx="5" fill="#03C75A" />
-      <path d="M8 7.5h2.4l3.4 4.87V7.5H16v9h-2.3l-3.5-5.02v5.02H8v-9Z" fill="#ffffff" />
-    </svg>
-  )
-}
-
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -43,20 +34,48 @@ function CloseIcon() {
   )
 }
 
-function getUserLabel(session) {
+function getUserLabel(session, profile) {
+  if (profile?.nickname) {
+    return profile.nickname
+  }
+
   const metadata = session?.user?.user_metadata ?? {}
-  return metadata.full_name || metadata.name || session?.user?.email || '사용자'
+  const nestedMetadata = metadata.response ?? metadata.profile ?? metadata.account ?? {}
+  return (
+    metadata.full_name ||
+    metadata.name ||
+    metadata.nickname ||
+    nestedMetadata.nickname ||
+    nestedMetadata.name ||
+    session?.user?.email ||
+    '사용자'
+  )
 }
 
-function getUserAvatar(session) {
+function getUserAvatar(session, profile) {
+  if (profile?.avatar_url) {
+    return profile.avatar_url
+  }
+
   const metadata = session?.user?.user_metadata ?? {}
-  return metadata.avatar_url || ''
+  const nestedMetadata = metadata.response ?? metadata.profile ?? metadata.account ?? {}
+  return (
+    metadata.avatar_url ||
+    metadata.picture ||
+    metadata.profile_image ||
+    nestedMetadata.avatar_url ||
+    nestedMetadata.picture ||
+    nestedMetadata.profile_image ||
+    nestedMetadata.profile_image_url ||
+    ''
+  )
 }
 
 function AuthMenu({
   session,
+  profile,
   loading = false,
-  onLogin,
+  onGoogleLogin,
   onLogout,
   onNavigateToMyPage,
 }) {
@@ -142,7 +161,7 @@ function AuthMenu({
                   className="auth-provider-button auth-provider-button-google"
                   onClick={async () => {
                     setLoginModalOpen(false)
-                    await onLogin()
+                    await onGoogleLogin()
                   }}
                   disabled={loading}
                 >
@@ -153,19 +172,6 @@ function AuthMenu({
                     <strong>{loading ? '연결 중...' : 'Google 로그인'}</strong>
                   </span>
                 </button>
-
-                <button
-                  type="button"
-                  className="auth-provider-button auth-provider-button-disabled"
-                  disabled
-                >
-                  <span className="auth-provider-icon">
-                    <NaverMark />
-                  </span>
-                  <span className="auth-provider-copy">
-                    <strong>네이버 로그인</strong>
-                  </span>
-                </button>
               </div>
             </section>
           </div>
@@ -174,8 +180,8 @@ function AuthMenu({
     )
   }
 
-  const userLabel = getUserLabel(session)
-  const userAvatar = getUserAvatar(session)
+  const userLabel = getUserLabel(session, profile)
+  const userAvatar = getUserAvatar(session, profile)
 
   return (
     <div className="auth-menu" ref={menuRef}>
