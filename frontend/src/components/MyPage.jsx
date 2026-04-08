@@ -66,6 +66,21 @@ function ChevronRightIcon() {
   )
 }
 
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="m14.5 6-6 6 6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function formatSavedDate(value) {
   if (!value) {
     return ''
@@ -251,12 +266,7 @@ function MyPage({
     [groupedByDate, monthKey],
   )
 
-  const resolvedSelectedDateKey =
-    selectedDateKey && availableKeysInMonth.includes(selectedDateKey)
-      ? selectedDateKey
-      : availableKeysInMonth[availableKeysInMonth.length - 1] || ''
-
-  const selectedDateItems = groupedByDate.get(resolvedSelectedDateKey) ?? []
+  const selectedDateItems = groupedByDate.get(selectedDateKey) ?? []
   const calendarDays = useMemo(
     () => buildCalendarDays(resolvedMonth, groupedByDate),
     [groupedByDate, resolvedMonth],
@@ -265,6 +275,7 @@ function MyPage({
   const savedDayCountThisMonth = useMemo(() => {
     return availableKeysInMonth.length
   }, [availableKeysInMonth.length])
+  const isDaySheetOpen = Boolean(selectedDateKey)
 
   if (!session) {
     return (
@@ -435,8 +446,8 @@ function MyPage({
 
             <div className="mypage-calendar-grid">
               {calendarDays.map((day) => {
-                const isSelected = resolvedSelectedDateKey === day.dateKey
-                const previewItems = day.items.slice(0, 2)
+                const isSelected = selectedDateKey === day.dateKey
+                const previewItems = day.items.slice(0, 1)
 
                 return (
                   <button
@@ -444,12 +455,8 @@ function MyPage({
                     type="button"
                     className={`mypage-calendar-cell${day.isCurrentMonth ? '' : ' is-muted'}${day.items.length ? ' has-items' : ''}${isSelected ? ' is-selected' : ''}`}
                     onClick={() => {
-                      if (day.items.length) {
-                        setSelectedDateKey(day.dateKey)
-                        if (!isSameMonth(day.date, resolvedMonth)) {
-                          setSelectedMonth(getMonthStart(day.date))
-                        }
-                      } else if (!isSameMonth(day.date, resolvedMonth)) {
+                      setSelectedDateKey(day.dateKey)
+                      if (!isSameMonth(day.date, resolvedMonth)) {
                         setSelectedMonth(getMonthStart(day.date))
                       }
                     }}
@@ -476,22 +483,44 @@ function MyPage({
             </div>
           </div>
 
-          <div className="mypage-day-panel">
-            <div className="mypage-day-header">
+        </section>
+      ) : null}
+
+      {isDaySheetOpen ? (
+        <div
+          className="mypage-day-sheet-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedDateKey('')
+            }
+          }}
+        >
+          <section className="mypage-day-sheet" role="dialog" aria-modal="true" aria-label="저장 기록 상세">
+            <div className="mypage-day-sheet-topbar">
+              <button
+                type="button"
+                className="mypage-day-sheet-back"
+                onClick={() => setSelectedDateKey('')}
+              >
+                <BackIcon />
+                <span>{`${resolvedMonth.getFullYear()}년 ${resolvedMonth.getMonth() + 1}월`}</span>
+              </button>
+              <span className="mypage-day-badge">
+                {monthKeysWithItems.has(selectedDateKey.slice(0, 7)) && selectedDateItems.length ? 'Saved' : 'Empty'}
+              </span>
+            </div>
+
+            <div className="mypage-day-header mypage-day-header-sheet">
               <div>
                 <p className="mypage-kicker">Selected Date</p>
-                <h3>{resolvedSelectedDateKey || '날짜를 선택하세요'}</h3>
+                <h3>{selectedDateKey}</h3>
                 <p>
                   {selectedDateItems.length
                     ? `${selectedDateItems.length}개의 저장 기록이 있습니다.`
-                    : '달력에서 저장된 날짜를 선택하면 기록이 여기에 나타납니다.'}
+                    : '이 날짜에는 저장된 기록이 없습니다.'}
                 </p>
               </div>
-              {resolvedSelectedDateKey ? (
-                <span className="mypage-day-badge">
-                  {monthKeysWithItems.has(resolvedSelectedDateKey.slice(0, 7)) ? 'Saved' : 'Empty'}
-                </span>
-              ) : null}
             </div>
 
             <div className="mypage-day-list">
@@ -532,12 +561,12 @@ function MyPage({
               ) : (
                 <div className="mypage-day-empty">
                   <h4>저장 기록이 없는 날짜예요</h4>
-                  <p>달력에서 칩이 표시된 날짜를 눌러 저장된 결과를 다시 확인해보세요.</p>
+                  <p>이 날짜에는 분석 결과를 저장하지 않았습니다. 다른 날짜를 눌러 기록을 확인해보세요.</p>
                 </div>
               )}
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       ) : null}
     </section>
   )

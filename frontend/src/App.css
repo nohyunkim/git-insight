@@ -1373,13 +1373,10 @@
 }
 
 .mypage-calendar-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-  gap: 20px;
+  display: block;
 }
 
 .mypage-calendar-panel,
-.mypage-day-panel,
 .saved-result-card {
   border: 1px solid rgba(101, 118, 150, 0.72);
   border-radius: 28px;
@@ -1389,8 +1386,7 @@
   box-shadow: 0 24px 56px rgba(7, 12, 24, 0.22);
 }
 
-.mypage-calendar-panel,
-.mypage-day-panel {
+.mypage-calendar-panel {
   padding: 24px;
 }
 
@@ -1532,7 +1528,8 @@
 .mypage-calendar-more {
   display: inline-flex;
   align-items: center;
-  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 28px;
   padding: 0 9px;
   border-radius: 999px;
@@ -1540,6 +1537,9 @@
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .mypage-calendar-chip {
@@ -1573,10 +1573,71 @@
   background: rgba(74, 138, 204, 0.26);
 }
 
+.mypage-day-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px;
+  background: rgba(8, 12, 22, 0.46);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.mypage-day-sheet {
+  display: grid;
+  align-content: flex-start;
+  gap: 18px;
+  width: min(540px, 100%);
+  height: min(100%, 820px);
+  padding: 22px;
+  border: 1px solid rgba(101, 118, 150, 0.72);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(77, 113, 177, 0.18), transparent 24%),
+    linear-gradient(180deg, rgba(20, 28, 46, 0.98), rgba(28, 35, 55, 0.98));
+  box-shadow: 0 30px 68px rgba(7, 12, 24, 0.36);
+  overflow: hidden;
+}
+
+.mypage-day-sheet-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.mypage-day-sheet-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 2px;
+  border: 0;
+  color: #dfe9f7;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.mypage-day-sheet-back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mypage-day-header-sheet {
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(91, 107, 142, 0.32);
+}
+
 .mypage-day-list {
   display: grid;
   gap: 14px;
-  margin-top: 22px;
+  align-content: flex-start;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .mypage-day-empty {
@@ -2128,7 +2189,6 @@
   .signal-grid,
   .practical-grid,
   .content-link-grid,
-  .mypage-calendar-shell,
   .result-editorial-grid {
     grid-template-columns: 1fr;
   }
@@ -2255,7 +2315,7 @@
   }
 
   .mypage-calendar-panel,
-  .mypage-day-panel {
+  .mypage-day-sheet {
     padding: 22px;
     border-radius: 24px;
   }
@@ -2343,6 +2403,18 @@
 }
 
 @media (max-width: 640px) {
+  .mypage-day-sheet-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .mypage-day-sheet {
+    width: 100%;
+    height: min(82vh, 760px);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
   .mypage-calendar-weekdays span {
     font-size: 0.68rem;
   }
