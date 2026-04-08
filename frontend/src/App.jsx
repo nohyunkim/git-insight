@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
 import { deleteSavedResult, ensureUserProfile, fetchSavedResults, getAnalysisDateKey, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges, updateUserNickname } from './lib/supabase'
 import { AuthMenu } from './components/AuthMenu'
+import { LandingPage } from './components/LandingPage'
 import { MyPage } from './components/MyPage'
 import { PolicyModal } from './components/PolicyModal'
 import { ProfileCard } from './components/ProfileCard'
@@ -612,113 +613,22 @@ function App() {
       ) : null}
 
       {route === 'landing' ? (
-        <>
-          <section className="landing-hero">
-            <div className="landing-brand-mark">
-              <img src="/favicon-branchicorn.png" alt="Git Insight logo" />
-            </div>
-            <p className="landing-kicker">GitHub Activity Reader</p>
-            <h1>Git Insight</h1>
-            <p className="landing-subtitle">
-              GitHub 활동을 한 번에 읽기 쉽게 보고, 다음에 무엇을 보면 좋을지 바로 이어지는 시작 화면입니다.
-            </p>
-
-            <SearchForm
-              variant="landing"
-              username={username}
-              loading={loading}
-              periods={PERIOD_OPTIONS}
-              selectedDays={selectedDays}
-              onUsernameChange={setUsername}
-              onPeriodChange={setSelectedDays}
-              onSearch={() => handleSearch(selectedDays)}
-            />
-
-            {error ? <p className="status-message error-message landing-error">{error}</p> : null}
-          </section>
-
-          <section className="landing-steps">
-            <div className="landing-section-heading">
-              <p className="landing-section-kicker">How It Works</p>
-              <h2>결과를 보는 방식</h2>
-            </div>
-
-            <div className="landing-step-grid">
-              {HOW_IT_WORKS_STEPS.map((item) => (
-                <article key={item.step} className="landing-step-card">
-                  <span className="landing-step-number">{item.step}</span>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="editorial-grid">
-              {LANDING_CONTENT_SECTIONS.map((section) => (
-                <article key={section.title} className="editorial-card">
-                  <div className="editorial-kicker-row">
-                    <span className="editorial-kicker-dot" aria-hidden="true" />
-                    <p className="editorial-kicker">{section.kicker}</p>
-                  </div>
-                  <h3>{section.title}</h3>
-                  <p className="editorial-summary">{section.summary}</p>
-                  <ul className="editorial-points">
-                    {section.points.map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
-                  <div className="editorial-tags">
-                    {section.tags.map((tag) => (
-                      <span key={tag} className="editorial-tag">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="landing-section-heading editorial-heading">
-              <p className="landing-section-kicker">More To Read</p>
-              <h2>함께 보면 좋은 읽을거리</h2>
-            </div>
-
-            <div className="content-link-grid">
-              {CONTENT_LINKS.map((item) => (
-                <a key={item.href} href={item.href} className="content-link-card">
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-        </>
+        <LandingPage
+          username={username}
+          loading={loading}
+          periods={PERIOD_OPTIONS}
+          selectedDays={selectedDays}
+          onUsernameChange={setUsername}
+          onPeriodChange={setSelectedDays}
+          onSearch={() => handleSearch(selectedDays)}
+          error={error}
+          howItWorksSteps={HOW_IT_WORKS_STEPS}
+          landingContentSections={LANDING_CONTENT_SECTIONS}
+          contentLinks={CONTENT_LINKS}
+          onOpenPolicy={setPolicyModalKey}
+          feedbackFormUrl={FEEDBACK_FORM_URL}
+        />
       ) : null}
-
-      <footer className="landing-footer">
-        <span className="landing-footer-line" aria-hidden="true" />
-        <nav className="landing-footer-links" aria-label="정책 및 안내 링크">
-          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('about')}>
-            서비스 소개
-          </button>
-          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('guide')}>
-            결과 해석 가이드
-          </button>
-          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('faq')}>
-            자주 묻는 질문
-          </button>
-          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('privacy')}>
-            개인정보 안내
-          </button>
-          <button type="button" className="footer-link-button" onClick={() => setPolicyModalKey('terms')}>
-            이용 안내
-          </button>
-          <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer">
-            문의/오류 제보
-          </a>
-        </nav>
-        <p>© 2026 Git Insight. All Rights Reserved.</p>
-      </footer>
 
       <PolicyModal policy={activePolicy} onClose={() => setPolicyModalKey('')} />
     </main>
