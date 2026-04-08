@@ -361,7 +361,7 @@
 }
 
 .mypage-shell {
-  width: min(1180px, calc(100% - 40px));
+  width: min(900px, calc(100% - 40px));
 }
 
 .landing-hero {
@@ -1178,6 +1178,9 @@
 .mypage-panel {
   display: grid;
   gap: 22px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .mypage-profile-card {
@@ -1387,7 +1390,7 @@
 }
 
 .mypage-calendar-panel {
-  padding: 24px;
+  padding: 22px;
 }
 
 .mypage-calendar-header,
@@ -1461,16 +1464,16 @@
 .mypage-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
 }
 
 .mypage-calendar-cell {
   display: grid;
   align-content: flex-start;
-  gap: 10px;
-  min-height: 122px;
-  padding: 12px;
+  gap: 8px;
+  min-height: 102px;
+  padding: 10px;
   border: 1px solid rgba(98, 116, 151, 0.46);
   border-radius: 20px;
   color: #eaf1fb;
@@ -1510,12 +1513,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   color: #f4f7fb;
   background: rgba(17, 24, 39, 0.48);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -1530,11 +1533,11 @@
   align-items: center;
   max-width: 100%;
   min-width: 0;
-  min-height: 28px;
-  padding: 0 9px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   color: #eef7ff;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   line-height: 1.2;
   overflow: hidden;
