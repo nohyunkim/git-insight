@@ -810,6 +810,7 @@ def summarize_analysis(
     return {
         'status': 'success',
         'username': username,
+        'generated_at': now.isoformat(),
         'profile': {
             'name': user_data.get('name'),
             'avatar_url': user_data.get('avatar_url'),

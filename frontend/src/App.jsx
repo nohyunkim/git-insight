@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
-import { deleteSavedResult, ensureUserProfile, fetchSavedResults, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges, updateUserNickname } from './lib/supabase'
+import { deleteSavedResult, ensureUserProfile, fetchSavedResults, getAnalysisDateKey, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges, updateUserNickname } from './lib/supabase'
 import { AuthMenu } from './components/AuthMenu'
 import { MyPage } from './components/MyPage'
 import { ProfileCard } from './components/ProfileCard'
@@ -524,15 +524,21 @@ function App() {
 
     const currentUsername = (userData.username ?? '').trim().toLowerCase()
     const currentWindowDays = userData.stats?.activity_summary?.window_days ?? selectedDays
+    const currentAnalysisDate = getAnalysisDateKey(new Date())
     const isAlreadySaved = savedResults.some((item) => {
       const savedUsername = (item.github_username ?? '').trim().toLowerCase()
       const savedWindowDays = item.window_days ?? item.snapshot?.stats?.activity_summary?.window_days
+      const savedAnalysisDate = getAnalysisDateKey(item)
 
-      return savedUsername === currentUsername && savedWindowDays === currentWindowDays
+      return (
+        savedUsername === currentUsername &&
+        savedWindowDays === currentWindowDays &&
+        savedAnalysisDate === currentAnalysisDate
+      )
     })
 
     if (isAlreadySaved) {
-      setAuthMessage('이미 저장된 결과예요.')
+      setAuthMessage('오늘 기준으로는 이미 저장된 결과예요.')
       return
     }
 
