@@ -75,33 +75,46 @@ GitHub 아이디와 기간만 입력하면 공개 프로필, 저장소, 이벤�
 
 ## Stack
 
-### Frontend
+<table>
+  <tr>
+    <td valign="top" width="25%">
+      <strong>Frontend</strong><br /><br />
+      <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=111827" />
+      <img src="https://img.shields.io/badge/Vite-646cff?style=flat-square&logo=vite&logoColor=white" />
+      <img src="https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white" />
+      <img src="https://img.shields.io/badge/Recharts-ff6384?style=flat-square&logo=chartdotjs&logoColor=white" />
+      <img src="https://img.shields.io/badge/jsPDF-bb1e10?style=flat-square&logo=adobeacrobatreader&logoColor=white" />
+    </td>
+    <td valign="top" width="25%">
+      <strong>Backend</strong><br /><br />
+      <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" />
+      <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" />
+      <img src="https://img.shields.io/badge/httpx-1f2937?style=flat-square&logoColor=white" />
+      <img src="https://img.shields.io/badge/GitHub%20REST%20API-181717?style=flat-square&logo=github&logoColor=white" />
+    </td>
+    <td valign="top" width="25%">
+      <strong>Database & Auth</strong><br /><br />
+      <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white" />
+      <img src="https://img.shields.io/badge/PostgreSQL-4169e1?style=flat-square&logo=postgresql&logoColor=white" />
+      <img src="https://img.shields.io/badge/Google%20OAuth-4285F4?style=flat-square&logo=google&logoColor=white" />
+    </td>
+    <td valign="top" width="25%">
+      <strong>Infra & AI</strong><br /><br />
+      <img src="https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white" />
+      <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=111827" />
+      <img src="https://img.shields.io/badge/Groq-f55036?style=flat-square&logoColor=white" />
+      <img src="https://img.shields.io/badge/AI%20Feedback-0f172a?style=flat-square&logoColor=white" />
+    </td>
+  </tr>
+</table>
 
-<p>
-  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=111827" />
-  <img src="https://img.shields.io/badge/Vite-646cff?style=for-the-badge&logo=vite&logoColor=white" />
-  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" />
-  <img src="https://img.shields.io/badge/Recharts-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/jsPDF-CC3534?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" />
+<br />
+
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=react,vite,python,fastapi,supabase,postgres,cloudflare&theme=dark" />
 </p>
 
-### Backend
-
-<p>
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
-  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/httpx-1f2937?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Groq-AI%20Feedback-F55036?style=for-the-badge" />
-</p>
-
-### Infra
-
-<p>
-  <img src="https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" />
-  <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=111827" />
-  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
-  <img src="https://img.shields.io/badge/GitHub%20API-181717?style=for-the-badge&logo=github&logoColor=white" />
-</p>
+스택은 실제 저장소 기준으로 다시 정리했습니다. 이 프로젝트에는 별도 MySQL이 들어가 있지 않고, 저장과 인증은 Supabase 위의 PostgreSQL과 Auth를 사용합니다.
 
 ---
 
