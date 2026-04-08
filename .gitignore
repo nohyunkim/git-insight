@@ -2,6 +2,8 @@ backend/venv/
 backend/__pycache__/
 .env
 *.pyc
+uvicorn.out.log
+uvicorn.err.log
 frontend/playwright-report/
 frontend/test-results/
 output/playwright/
