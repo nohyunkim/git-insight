@@ -361,7 +361,7 @@
 }
 
 .mypage-shell {
-  width: min(1180px, calc(100% - 40px));
+  width: min(900px, calc(100% - 40px));
 }
 
 .landing-hero {
@@ -1178,6 +1178,9 @@
 .mypage-panel {
   display: grid;
   gap: 22px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .mypage-profile-card {
@@ -1195,7 +1198,20 @@
 .mypage-profile-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
+}
+
+.mypage-profile-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mypage-profile-actions {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  justify-content: flex-end;
 }
 
 .mypage-profile-avatar {
@@ -1225,6 +1241,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 4px;
 }
 
 .mypage-profile-edit-button {
@@ -1257,6 +1274,12 @@
 .mypage-profile-head p {
   margin: 0;
   color: #aab9cf;
+}
+
+.mypage-profile-email {
+  max-width: 100%;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .mypage-profile-form {
@@ -1294,7 +1317,6 @@
   color: #dce7f8;
 }
 
-.mypage-header,
 .mypage-empty {
   padding: 28px;
   border: 1px solid rgba(101, 118, 150, 0.72);
@@ -1303,13 +1325,6 @@
     radial-gradient(circle at top right, rgba(77, 113, 177, 0.16), transparent 26%),
     linear-gradient(180deg, rgba(24, 31, 50, 0.98), rgba(30, 37, 58, 0.98));
   box-shadow: 0 24px 56px rgba(7, 12, 24, 0.22);
-}
-
-.mypage-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
 }
 
 .mypage-icon-button {
@@ -1387,7 +1402,7 @@
 }
 
 .mypage-calendar-panel {
-  padding: 24px;
+  padding: 22px;
 }
 
 .mypage-calendar-header,
@@ -1461,16 +1476,16 @@
 .mypage-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
 }
 
 .mypage-calendar-cell {
   display: grid;
   align-content: flex-start;
-  gap: 10px;
-  min-height: 122px;
-  padding: 12px;
+  gap: 8px;
+  min-height: 102px;
+  padding: 10px;
   border: 1px solid rgba(98, 116, 151, 0.46);
   border-radius: 20px;
   color: #eaf1fb;
@@ -1510,12 +1525,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   color: #f4f7fb;
   background: rgba(17, 24, 39, 0.48);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -1530,11 +1545,11 @@
   align-items: center;
   max-width: 100%;
   min-width: 0;
-  min-height: 28px;
-  padding: 0 9px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   color: #eef7ff;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   line-height: 1.2;
   overflow: hidden;
@@ -2307,7 +2322,6 @@
     align-items: flex-start;
   }
 
-  .mypage-header,
   .mypage-empty,
   .saved-result-card {
     padding: 22px;
@@ -2403,6 +2417,14 @@
 }
 
 @media (max-width: 640px) {
+  .mypage-profile-head {
+    align-items: flex-start;
+  }
+
+  .mypage-profile-actions {
+    align-self: flex-start;
+  }
+
   .mypage-day-sheet-backdrop {
     align-items: flex-end;
     padding: 10px;
