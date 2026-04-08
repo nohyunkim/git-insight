@@ -21,7 +21,40 @@ export function getSupabaseConfigError() {
     return ''
   }
 
-  return 'Supabase 환경변수가 아직 설정되지 않았습니다. frontend/.env의 VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY를 확인해주세요.'
+  return 'Supabase 환경변수가 설정되지 않았습니다. 로컬에서는 frontend/.env를, 배포 환경에서는 호스팅 서비스 환경변수에 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY를 설정해주세요.'
+}
+
+function formatLocalDateKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function getAnalysisDateKey(source) {
+  if (!source) {
+    return ''
+  }
+
+  if (typeof source === 'string' || source instanceof Date) {
+    return formatLocalDateKey(source)
+  }
+
+  return (
+    source.analysis_date ||
+    formatLocalDateKey(
+      source.analysis_generated_at ||
+      source.generated_at ||
+      source.created_at ||
+      source.snapshot?.generated_at ||
+      null,
+    )
+  )
 }
 
 function getDefaultOAuthRedirectTo() {
@@ -366,11 +399,15 @@ export async function updateUserNickname(session, nickname) {
 function toSavedResultRow(userId, analysisPayload) {
   const summary = analysisPayload?.stats?.activity_summary ?? {}
   const feedback = analysisPayload?.feedback ?? {}
+  const analysisGeneratedAt = analysisPayload?.generated_at || new Date().toISOString()
+  const analysisDate = formatLocalDateKey(new Date())
 
   return {
     user_id: userId,
     github_username: analysisPayload?.username ?? '',
     window_days: summary.window_days ?? 30,
+    analysis_date: analysisDate,
+    analysis_generated_at: analysisGeneratedAt,
     profile_name: analysisPayload?.profile?.name ?? null,
     headline: feedback.headline ?? null,
     snapshot: analysisPayload,
@@ -394,7 +431,7 @@ export async function saveAnalysisResult(session, analysisPayload) {
     .single()
 
   if (error?.code === '23505') {
-    throw new Error('같은 GitHub 아이디와 기간의 결과는 한 번만 저장할 수 있습니다.')
+    throw new Error('같은 날짜의 같은 GitHub 아이디와 기간 결과는 한 번만 저장할 수 있습니다.')
   }
 
   if (error) {
@@ -415,7 +452,7 @@ export async function fetchSavedResults(session) {
 
   const { data, error } = await supabase
     .from('saved_results')
-    .select('id, github_username, window_days, profile_name, headline, snapshot, created_at')
+    .select('id, github_username, window_days, analysis_date, analysis_generated_at, profile_name, headline, snapshot, created_at')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
 

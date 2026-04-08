@@ -73,10 +73,13 @@ CACHE_TTL_SECONDS=300
 ### 환경 변수
 
 - `VITE_API_BASE_URL=https://your-render-backend.onrender.com`
+- `VITE_SUPABASE_URL=https://your-project-ref.supabase.co`
+- `VITE_SUPABASE_ANON_KEY=your-supabase-anon-key`
 
 ### 참고
 
 - 프론트엔드는 빌드 시점에 `VITE_API_BASE_URL`을 사용합니다.
+- 로그인과 마이페이지 기능을 쓰려면 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`도 배포 환경변수에 반드시 있어야 합니다.
 - 값은 반드시 Render 백엔드의 실제 배포 URL과 일치해야 합니다.
 
 ## 3. 배포 순서
@@ -85,7 +88,7 @@ CACHE_TTL_SECONDS=300
 
 1. Render에 백엔드 먼저 배포
 2. Render 배포 URL 확인
-3. Cloudflare Pages에 `VITE_API_BASE_URL` 설정 후 프론트 배포
+3. Cloudflare Pages에 `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` 설정 후 프론트 배포
 4. Cloudflare Pages 배포 URL을 Render의 `FRONTEND_ORIGINS`에 반영
 5. 필요 시 재배포
 
@@ -141,4 +144,3 @@ CACHE_TTL_SECONDS=300
 - 배포 후 잠시 기다리기
 - 플랫폼별 미리보기 캐시 갱신 도구 사용
 - 썸네일 이미지 비율이 `1200x630`에 맞는지 확인
-
