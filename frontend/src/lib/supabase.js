@@ -29,7 +29,7 @@ function getDefaultOAuthRedirectTo() {
     return ''
   }
 
-  return `${window.location.origin}${window.location.pathname}`
+  return `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`
 }
 
 export async function signInWithGoogle(redirectTo = getDefaultOAuthRedirectTo()) {
@@ -392,6 +392,10 @@ export async function saveAnalysisResult(session, analysisPayload) {
     .insert(row)
     .select()
     .single()
+
+  if (error?.code === '23505') {
+    throw new Error('같은 GitHub 아이디와 기간의 결과는 한 번만 저장할 수 있습니다.')
+  }
 
   if (error) {
     throw error
