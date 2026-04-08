@@ -296,27 +296,6 @@ function MyPage({
 
   return (
     <section className="mypage-panel">
-      <div className="mypage-header">
-        <div>
-          <p className="mypage-kicker">My Page</p>
-          <h2>저장한 GitHub 분석 기록을 달력으로 관리</h2>
-          <p>
-            저장된 결과를 날짜 중심으로 훑고, 특정 날짜를 눌러 그날 저장한 기록을 다시 비교할 수 있습니다.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="mypage-icon-button"
-          onClick={onRefresh}
-          disabled={loading || profileLoading}
-          aria-label={loading || profileLoading ? '불러오는 중' : '새로고침'}
-          title={loading || profileLoading ? '불러오는 중' : '새로고침'}
-        >
-          <RefreshIcon />
-        </button>
-      </div>
-
       <section className="mypage-profile-card">
         <div className="mypage-profile-head">
           {profile?.avatar_url ? (
@@ -330,7 +309,7 @@ function MyPage({
               {(profile?.nickname || session.user?.email || '?').slice(0, 1).toUpperCase()}
             </div>
           )}
-          <div>
+          <div className="mypage-profile-meta">
             <p className="mypage-kicker">Profile</p>
             <div className="mypage-profile-title-row">
               <h3>{profile?.nickname || '사용자'}</h3>
@@ -342,11 +321,23 @@ function MyPage({
                   setEditingNickname((current) => !current)
                 }}
                 aria-label="닉네임 수정"
+                >
+                  <EditIcon />
+                </button>
+              </div>
+            <div className="mypage-profile-subrow">
+              <p>{session.user?.email || '소셜 로그인 계정'}</p>
+              <button
+                type="button"
+                className="mypage-icon-button"
+                onClick={onRefresh}
+                disabled={loading || profileLoading}
+                aria-label={loading || profileLoading ? '불러오는 중' : '새로고침'}
+                title={loading || profileLoading ? '불러오는 중' : '새로고침'}
               >
-                <EditIcon />
+                <RefreshIcon />
               </button>
             </div>
-            <p>{session.user?.email || '소셜 로그인 계정'}</p>
           </div>
         </div>
 
