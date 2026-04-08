@@ -1,159 +1,151 @@
 # Git Insight
 
-Git Insight는 GitHub 공개 활동을 한눈에 읽을 수 있도록 정리해주는 분석 서비스입니다.  
-사용자는 GitHub 아이디만 입력하면 최근 활동 흐름, 언어 분포, 이벤트 패턴, 그리고 다음 액션에 대한 인사이트를 빠르게 확인할 수 있습니다.
+<div align="center">
 
-## 프로젝트 소개
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:1f6feb,100:16c47f&height=220&section=header&text=Git%20Insight&desc=Read%20Public%20GitHub%20Activity%20Like%20a%20Story&descAlignY=62&fontSize=42&fontColor=ffffff&descSize=18&animation=fadeIn&fontAlignY=38" />
 
-이 프로젝트는 다음 질문에서 출발했습니다.
+<br />
 
-> "GitHub 아이디 하나만으로 이 사람의 최근 활동 흐름을 빠르게 이해할 수 있을까?"
+<img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=20&pause=1200&color=9BE9A8&center=true&vCenter=true&width=780&lines=GitHub+activity+dashboard;Timeline-based+archive+for+saved+results;Rule-based+insight+with+optional+AI+feedback;FastAPI+%2B+React+%2B+Supabase" />
 
-Git Insight는 이 문제를 해결하기 위해 GitHub 공개 데이터를 수집하고, 선택한 기간 기준으로 활동을 집계한 뒤, 읽기 쉬운 대시보드 형태로 보여줍니다.
+<br /><br />
 
-현재 서비스는 다음 경험을 제공합니다.
+<img src="https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+<img src="https://img.shields.io/badge/React-Frontend-61dafb?style=for-the-badge&logo=react&logoColor=111827" />
+<img src="https://img.shields.io/badge/Supabase-Auth%20%26%20Archive-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white" />
+<img src="https://img.shields.io/badge/Cloudflare%20Pages-Deploy-f38020?style=for-the-badge&logo=cloudflare&logoColor=white" />
 
-- 기간 선택 기반 분석: `7일`, `30일`, `90일`, `6개월`, `1년`
-- 프로필 요약 카드: 이벤트 수, Push 활동, 활동 날짜, 공개 레포 수
-- 언어 분포 차트 및 이벤트 유형 차트
-- 규칙 기반 인사이트 + 선택적 AI 보강 피드백
-- 결과 공유 기능: 링크 복사, 이미지 저장, PDF 저장
-- 하단 안내 링크: 서비스 소개, 지표 해석 가이드, FAQ, 개인정보처리방침, 이용약관, 문의/오류 제보
-- 브랜드 아이콘, 파비콘, 공유 썸네일(OG/Twitter) 적용
+</div>
 
-## 주요 기능
+---
 
-### 1. GitHub 활동 대시보드
+## Overview
 
-GitHub 아이디를 입력하면 다음 정보를 확인할 수 있습니다.
+Git Insight는 공개 GitHub 기록을 숫자 나열이 아니라 흐름 중심으로 읽게 해주는 분석 서비스입니다.  
+GitHub 아이디와 기간만 입력하면 공개 프로필, 저장소, 이벤트를 다시 집계해 활동 패턴, 언어 분포, 이벤트 유형, 다음 액션 힌트를 한 화면에서 확인할 수 있습니다.
+
+이 프로젝트는 아래 질문에서 출발했습니다.
+
+> "GitHub 아이디 하나만으로 최근 활동 흐름과 기록 인상을 빠르게 읽을 수 있을까?"
+
+---
+
+## What It Does
+
+- `7일`, `30일`, `90일`, `6개월`, `1년` 기준으로 공개 활동을 다시 집계합니다.
+- 이벤트 수, Push 수, 활동 일수, 언어 분포, 이벤트 유형을 대시보드로 보여줍니다.
+- 규칙 기반 인사이트를 먼저 제공하고, 선택적으로 AI 보강 피드백을 이어서 보여줍니다.
+- 결과 링크 복사, 이미지 저장, PDF 저장을 지원합니다.
+- Google 로그인 후 결과를 저장하고, 마이페이지에서 날짜별 달력 아카이브로 다시 열람할 수 있습니다.
+- 서비스 소개, 지표 해석 가이드, FAQ, 개인정보 안내, 이용 안내 문서를 함께 제공합니다.
+
+---
+
+## Highlight
+
+### 1. Activity Dashboard
 
 - 공개 프로필 요약
 - 전체 공개 레포 수
-- 선택 기간 기준 공개 이벤트 수
-- 선택 기간 기준 Push 수
-- 선택 기간 기준 활동 날짜 수
-- 공개 레포 기준 언어 분포
+- 기간 기준 공개 이벤트 수
+- 기간 기준 Push 수
+- 기간 기준 활동 날짜 수
+- 공개 저장소 기준 언어 분포
 - 공개 활동 기준 상위 이벤트 유형
 
-### 2. 기간 선택 분석
+### 2. Insight Flow
 
-다음 기간 기준으로 활동을 분석할 수 있습니다.
+- 기본 분석 결과를 먼저 반환
+- AI 피드백은 뒤이어 로드
+- `headline`, `strength`, `improvement`, `next_step` 구조로 인사이트 제공
 
-- `7일`
-- `30일`
-- `90일`
-- `6개월`
-- `1년`
+### 3. Saved Archive
 
-이벤트, Push, 활동 날짜 등 기간 민감 지표는 선택한 기간에 맞춰 다시 계산됩니다.
+- 같은 사용자와 같은 기간이라도 저장 날짜가 다르면 별도 기록으로 저장
+- 마이페이지에서 월별 달력으로 기록 관리
+- 날짜 클릭 시 저장된 결과 목록을 다시 확인하고 열람 또는 삭제 가능
 
-### 3. 인사이트 생성
+### 4. Shareable Output
 
-Git Insight는 GitHub 활동 데이터를 기반으로 읽기 쉬운 분석 문장을 생성합니다.
+- 링크 복사
+- 이미지 저장
+- PDF 저장
 
-- 기본: 규칙 기반 요약
-- 선택: Groq 기반 AI 보강 피드백
+---
 
-인사이트 구조는 다음 4개 필드로 나뉩니다.
-
-- `headline`
-- `strength`
-- `improvement`
-- `next_step`
-
-### 4. 공유 및 저장
-
-결과 화면은 다음 방식으로 활용할 수 있습니다.
-
-- `링크 복사`
-- `이미지 저장`
-- `PDF 저장`
-
-복사한 링크에는 현재 선택한 GitHub 아이디와 기간 상태가 함께 반영됩니다.
-
-### 5. 정책/안내 모달
-
-화면 하단 링크에서 다음 내용을 모달 형태로 바로 확인할 수 있습니다.
-
-- 서비스 소개
-- 지표 해석 가이드
-- 자주 묻는 질문(FAQ)
-- 개인정보처리방침
-- 이용약관
-
-문의/오류 제보는 Google Form 링크로 연결됩니다.
-
-## 기술 스택
+## Stack
 
 ### Frontend
 
-- React
-- Vite
-- Axios
-- Recharts
-- html-to-image
-- jsPDF
+<p>
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=111827" />
+  <img src="https://img.shields.io/badge/Vite-646cff?style=for-the-badge&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" />
+  <img src="https://img.shields.io/badge/Recharts-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/jsPDF-CC3534?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" />
+</p>
 
 ### Backend
 
-- FastAPI
-- httpx
-- python-dotenv
+<p>
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/httpx-1f2937?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Groq-AI%20Feedback-F55036?style=for-the-badge" />
+</p>
 
-### 외부 연동
+### Infra
 
-- GitHub REST API
-- Groq API
+<p>
+  <img src="https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" />
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=111827" />
+  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/GitHub%20API-181717?style=for-the-badge&logo=github&logoColor=white" />
+</p>
 
-### 배포
+---
 
-- Cloudflare Pages: 프론트엔드
-- Render: 백엔드 API
-
-## 프로젝트 구조
+## Architecture
 
 ```text
-git-insight/
-├─ backend/
-│  ├─ main.py
-│  └─ requirements.txt
-├─ frontend/
-│  ├─ public/
-│  ├─ src/
-│  ├─ package.json
-│  └─ vite.config.js
-├─ DEPLOY.md
-├─ render.yaml
-└─ README.md
+Browser
+  -> Cloudflare Pages (frontend)
+  -> Render (FastAPI backend)
+  -> GitHub API / Groq API
+  -> Supabase Auth / Database
 ```
 
-## 아키텍처 개요
+### Frontend Responsibilities
 
-### 프론트엔드 역할
+- GitHub 아이디 입력과 기간 선택
+- 결과 대시보드 렌더링
+- AI 피드백 후속 로드
+- 공유 액션 처리
+- 로그인, 저장, 마이페이지 달력 아카이브 UI
 
-- GitHub 아이디 입력 및 기간 선택
-- 분석 결과 대시보드 렌더링
-- 인사이트 카드 및 차트 표현
-- 공유 및 저장 기능 제공
-- 소셜 미리보기 메타태그 관리
+### Backend Responsibilities
 
-### 백엔드 역할
-
-- GitHub 프로필 / 레포 / 이벤트 데이터 조회
+- GitHub 프로필 / 저장소 / 이벤트 조회
 - 기간 기준 활동 집계
 - 언어 분포 및 이벤트 통계 계산
 - 캐시 처리
-- 선택적 AI 피드백 생성
+- 규칙 기반 요약 및 선택적 AI 피드백 생성
 
-## API 요약
+---
+
+## API
 
 ### `GET /health`
 
-배포 환경에서 상태 확인용으로 사용하는 헬스체크 엔드포인트입니다.
+배포 상태 확인용 헬스체크 엔드포인트입니다.
 
 ### `GET /api/analyze/{username}?days=30`
 
 프로필 정보, 활동 통계, 기본 인사이트를 반환합니다.
+
+### `GET /api/feedback/{username}?days=30`
+
+기본 분석 결과 이후 AI 보강 피드백을 반환합니다.
 
 예시 응답 구조:
 
@@ -161,6 +153,7 @@ git-insight/
 {
   "status": "success",
   "username": "example",
+  "generated_at": "2026-04-08T12:34:56.000Z",
   "profile": {
     "name": "Example User",
     "avatar_url": "https://...",
@@ -194,20 +187,9 @@ git-insight/
 }
 ```
 
-### `GET /api/feedback/{username}?days=30`
+---
 
-기본 분석 결과 이후, 추가 AI 피드백을 별도로 반환합니다.
-
-## 설계 및 성능 포인트
-
-실사용 체감을 개선하기 위해 다음과 같은 구조를 적용했습니다.
-
-- 기본 분석 결과를 먼저 반환하고, AI 피드백은 뒤이어 로드
-- GitHub 요청은 전역 async HTTP client 재사용
-- 동일한 사용자 / 기간 요청에는 메모리 TTL 캐시 적용
-- 이미지 저장 / PDF 저장 라이브러리는 버튼 클릭 시점에만 lazy load
-
-## 로컬 실행 방법
+## Local Setup
 
 ### Backend
 
@@ -229,16 +211,19 @@ npm run dev
 
 기본 포트는 `5173`입니다.
 
-## 환경 변수
+---
 
-프론트엔드(Cloudflare Pages 또는 `frontend/.env`)에는 아래 키를 설정하세요.
+## Environment Variables
+
+### Frontend
 
 - `VITE_API_BASE_URL`
-- 카카오 공유 키: `VITE_KAKAO_JAVASCRIPT_KEY` (권장)
-  - 호환 키로 `VITE_KAKAO_APP_KEY`도 인식합니다.
-  - 추가 호환 키로 `VITE_KAKAO_KEY`도 인식합니다.
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_KAKAO_JAVASCRIPT_KEY` 권장
+- 호환 키: `VITE_KAKAO_APP_KEY`, `VITE_KAKAO_KEY`
 
-루트 `.env`, `backend/.env`, 또는 배포 환경 변수에 아래 값을 설정할 수 있습니다.
+### Backend
 
 - `GITHUB_TOKEN`
 - `AI_PROVIDER`
@@ -247,36 +232,49 @@ npm run dev
 - `CACHE_TTL_SECONDS`
 - `FRONTEND_ORIGINS`
 
-## 배포 메모
+---
 
-- 프론트엔드는 Cloudflare Pages 배포를 기준으로 구성되어 있습니다.
-- 백엔드는 Render 배포를 기준으로 구성되어 있습니다.
-- `render.yaml`에는 헬스체크 경로가 포함되어 있습니다.
-- 공유 썸네일과 소셜 미리보기 메타는 `frontend/index.html`에서 관리합니다.
-- `frontend/public/robots.txt`, `frontend/public/sitemap.xml`이 포함되어 있습니다.
+## Deployment Notes
 
-배포 상세 내용은 [DEPLOY.md](./DEPLOY.md)에서 확인할 수 있습니다.
+- 프론트엔드는 Cloudflare Pages 기준으로 구성되어 있습니다.
+- 백엔드는 Render 기준으로 구성되어 있습니다.
+- 로그인과 저장 기능을 쓰려면 Supabase Auth URL 설정까지 같이 맞춰야 합니다.
+- `saved_results`와 `profiles` SQL을 Supabase에 반영해야 마이페이지 기능이 정상 동작합니다.
+- 상세 배포 순서와 로그인 설정 체크리스트는 [DEPLOY.md](./DEPLOY.md)에서 확인할 수 있습니다.
 
-## 현재 범위
+---
 
-Git Insight는 현재 다음 범위에 집중하고 있습니다.
+## Project Structure
 
-- 공개 GitHub 활동 분석
-- 빠르게 읽히는 대시보드형 요약
-- 간단한 공유 및 저장 경험
+```text
+git-insight/
+├─ backend/
+│  ├─ main.py
+│  └─ requirements.txt
+├─ frontend/
+│  ├─ public/
+│  ├─ src/
+│  ├─ package.json
+│  └─ vite.config.js
+├─ supabase/
+│  ├─ profiles.sql
+│  └─ saved_results.sql
+├─ DEPLOY.md
+├─ render.yaml
+└─ README.md
+```
 
-다음과 같은 범위는 현재 목표에 포함하지 않습니다.
+---
 
-- GitHub 전체 분석 플랫폼 수준의 기능 확장
-- 비공개 레포 분석
-- 점수화 / 순위화 / 미래 예측 중심 기능
+## With This Project
 
-## 향후 개선 아이디어
+- 공개 GitHub 기록을 해석 가능한 제품 UX로 바꾸는 흐름
+- FastAPI + React + Supabase 조합의 실서비스 구조
+- 규칙 기반 분석과 AI 피드백을 분리한 응답 설계
+- 로그인, 저장, 날짜별 아카이브를 포함한 사용자 기능 확장
 
-다음 단계로 고려할 수 있는 항목입니다.
+---
 
-- 활동 히트맵
-- 이전 기간 대비 비교 지표
-- 레포지토리별 활동 Top N
-- 협업 패턴 분석
-- 결과 공유 화면 고도화
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:16c47f,100:1f6feb&height=120&section=footer" />
+</div>
