@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { fetchGitHubComparison } from '../api/github'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -98,7 +99,7 @@ function parseDateValue(value) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-function formatSavedDate(value) {
+function formatSavedDate(value, includeTime = true) {
   const date = parseDateValue(value)
   if (!date) {
     return ''
@@ -108,8 +109,12 @@ function formatSavedDate(value) {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    ...(includeTime
+      ? {
+          hour: '2-digit',
+          minute: '2-digit',
+        }
+      : {}),
   }).format(date)
 }
 
@@ -185,6 +190,34 @@ function getSummary(savedResult) {
   }
 }
 
+function getSavedResultTimestamp(savedResult) {
+  const value =
+    savedResult?.analysis_generated_at ||
+    savedResult?.created_at ||
+    savedResult?.snapshot?.generated_at ||
+    ''
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
+function getSavedResultUsername(savedResult) {
+  return (
+    savedResult?.github_username ||
+    savedResult?.snapshot?.username ||
+    ''
+  )
+    .trim()
+    .toLowerCase()
+}
+
+function getSavedResultWindowDays(savedResult) {
+  return (
+    savedResult?.window_days ||
+    savedResult?.snapshot?.stats?.activity_summary?.window_days ||
+    30
+  )
+}
+
 function buildCalendarDays(monthDate, itemsByDate) {
   const monthStart = getMonthStart(monthDate)
   const monthStartDay = monthStart.getDay()
@@ -216,18 +249,21 @@ function MyPage({
   error,
   onRefresh,
   onOpenResult,
-  onCompareResult,
-  getComparableSavedResult,
   onGoogleLogin,
   onSaveNickname,
   onDeleteResult,
   deletingId,
-  comparingId,
 }) {
   const [nicknameInput, setNicknameInput] = useState('')
   const [editingNickname, setEditingNickname] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [selectedDateKey, setSelectedDateKey] = useState('')
+  const [compareSourceItem, setCompareSourceItem] = useState(null)
+  const [selectedCompareTargetId, setSelectedCompareTargetId] = useState('')
+  const [comparisonLoading, setComparisonLoading] = useState(false)
+  const [comparisonError, setComparisonError] = useState('')
+  const [comparisonData, setComparisonData] = useState(null)
+  const [comparingSourceId, setComparingSourceId] = useState('')
 
   const groupedByDate = useMemo(() => {
     const map = new Map()
@@ -244,15 +280,9 @@ function MyPage({
     })
 
     for (const value of map.values()) {
-      value.sort((left, right) => {
-        const leftTime = parseDateValue(
-          left.analysis_generated_at || left.created_at || 0,
-        )?.getTime() ?? 0
-        const rightTime = parseDateValue(
-          right.analysis_generated_at || right.created_at || 0,
-        )?.getTime() ?? 0
-        return rightTime - leftTime
-      })
+      value.sort(
+        (left, right) => getSavedResultTimestamp(right) - getSavedResultTimestamp(left),
+      )
     }
 
     return map
@@ -297,8 +327,97 @@ function MyPage({
     [groupedByDate, resolvedMonth],
   )
 
+  const compareCandidates = useMemo(() => {
+    if (!compareSourceItem?.id) {
+      return []
+    }
+
+    const sourceUsername = getSavedResultUsername(compareSourceItem)
+    const sourceWindowDays = getSavedResultWindowDays(compareSourceItem)
+    const sourceTimestamp = getSavedResultTimestamp(compareSourceItem)
+
+    return items
+      .filter((item) => {
+        if (!item?.id || item.id === compareSourceItem.id || !item.snapshot) {
+          return false
+        }
+
+        return (
+          getSavedResultUsername(item) === sourceUsername &&
+          getSavedResultWindowDays(item) === sourceWindowDays &&
+          getSavedResultTimestamp(item) < sourceTimestamp
+        )
+      })
+      .sort((left, right) => getSavedResultTimestamp(right) - getSavedResultTimestamp(left))
+  }, [compareSourceItem, items])
+
+  const selectedCompareTarget =
+    compareCandidates.find((item) => item.id === selectedCompareTargetId) ?? null
+
   const savedDayCountThisMonth = availableKeysInMonth.length
   const isDaySheetOpen = Boolean(selectedDateKey)
+  const isCompareDialogOpen = Boolean(compareSourceItem)
+
+  const openCompareDialog = (savedResult) => {
+    const sourceCandidates = items
+      .filter((item) => {
+        if (!item?.id || item.id === savedResult.id || !item.snapshot) {
+          return false
+        }
+
+        return (
+          getSavedResultUsername(item) === getSavedResultUsername(savedResult) &&
+          getSavedResultWindowDays(item) === getSavedResultWindowDays(savedResult) &&
+          getSavedResultTimestamp(item) < getSavedResultTimestamp(savedResult)
+        )
+      })
+      .sort((left, right) => getSavedResultTimestamp(right) - getSavedResultTimestamp(left))
+
+    if (!sourceCandidates.length) {
+      return
+    }
+
+    setCompareSourceItem(savedResult)
+    setSelectedCompareTargetId(sourceCandidates[0].id)
+    setComparisonError('')
+    setComparisonData(null)
+  }
+
+  const closeCompareDialog = () => {
+    setCompareSourceItem(null)
+    setSelectedCompareTargetId('')
+    setComparisonLoading(false)
+    setComparisonError('')
+    setComparisonData(null)
+    setComparingSourceId('')
+  }
+
+  const handleRunComparison = async () => {
+    if (!compareSourceItem?.snapshot || !selectedCompareTarget?.snapshot) {
+      setComparisonError('비교할 이전 기록을 선택해주세요.')
+      return
+    }
+
+    setComparisonLoading(true)
+    setComparisonError('')
+    setComparisonData(null)
+    setComparingSourceId(compareSourceItem.id)
+
+    try {
+      const nextComparisonData = await fetchGitHubComparison(
+        compareSourceItem.snapshot,
+        selectedCompareTarget.snapshot,
+      )
+      setComparisonData(nextComparisonData)
+    } catch (comparisonRequestError) {
+      setComparisonError(
+        comparisonRequestError.message || '이전 기록 비교 피드백을 불러오지 못했습니다.',
+      )
+    } finally {
+      setComparisonLoading(false)
+      setComparingSourceId('')
+    }
+  }
 
   if (!session) {
     return (
@@ -590,14 +709,14 @@ function MyPage({
               {selectedDateItems.length ? (
                 selectedDateItems.map((item) => {
                   const summary = getSummary(item)
-                  const comparableItem = getComparableSavedResult?.(item)
-                  const canCompare = Boolean(comparableItem)
-                  const compareButtonLabel =
-                    comparingId === item.id
-                      ? '비교 중..'
-                      : canCompare
-                        ? '비교하기'
-                        : '비교 기록 없음'
+                  const canCompare = items.some(
+                    (candidate) =>
+                      candidate.id !== item.id &&
+                      candidate.snapshot &&
+                      getSavedResultUsername(candidate) === getSavedResultUsername(item) &&
+                      getSavedResultWindowDays(candidate) === getSavedResultWindowDays(item) &&
+                      getSavedResultTimestamp(candidate) < getSavedResultTimestamp(item),
+                  )
 
                   return (
                     <article key={item.id} className="saved-result-card saved-result-card-day">
@@ -620,10 +739,14 @@ function MyPage({
                         <button
                           type="button"
                           className="mypage-secondary-button"
-                          onClick={() => onCompareResult(item)}
-                          disabled={!canCompare || comparingId === item.id}
+                          onClick={() => openCompareDialog(item)}
+                          disabled={!canCompare || comparingSourceId === item.id}
                         >
-                          {compareButtonLabel}
+                          {!canCompare
+                            ? '비교 기록 없음'
+                            : comparingSourceId === item.id
+                              ? '비교 중..'
+                              : '비교하기'}
                         </button>
                         <button
                           type="button"
@@ -647,6 +770,138 @@ function MyPage({
                 </div>
               )}
             </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isCompareDialogOpen ? (
+        <div
+          className="mypage-compare-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeCompareDialog()
+            }
+          }}
+        >
+          <section
+            className="mypage-compare-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="저장 기록 비교"
+          >
+            <div className="mypage-day-sheet-topbar">
+              <button
+                type="button"
+                className="mypage-day-sheet-back"
+                onClick={closeCompareDialog}
+              >
+                <BackIcon />
+                <span>비교 창 닫기</span>
+              </button>
+              <span className="mypage-day-badge">Compare</span>
+            </div>
+
+            <div className="mypage-compare-header">
+              <p className="mypage-kicker">Compare Saved Results</p>
+              <h3>
+                @{compareSourceItem?.github_username} {getSavedResultWindowDays(compareSourceItem)}일 기록 비교
+              </h3>
+              <p>
+                아래에서 같은 사람, 같은 기간의 이전 저장 기록을 고른 뒤 비교를
+                실행하세요.
+              </p>
+            </div>
+
+            <section className="mypage-compare-current">
+              <p className="mypage-compare-label">현재 선택한 기록</p>
+              <h4>{formatSavedDate(compareSourceItem?.analysis_generated_at || compareSourceItem?.created_at)}</h4>
+              <p>{getSummary(compareSourceItem).headline}</p>
+            </section>
+
+            <section className="mypage-compare-selector">
+              <div className="mypage-compare-selector-head">
+                <p className="mypage-compare-label">비교할 이전 기록 선택</p>
+                <button
+                  type="button"
+                  className="mypage-primary-button"
+                  onClick={handleRunComparison}
+                  disabled={!selectedCompareTargetId || comparisonLoading}
+                >
+                  {comparisonLoading ? '비교 분석 중' : '비교 실행'}
+                </button>
+              </div>
+
+              <div className="mypage-compare-candidate-list">
+                {compareCandidates.map((item) => {
+                  const summary = getSummary(item)
+                  const isActive = selectedCompareTargetId === item.id
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`mypage-compare-candidate${isActive ? ' is-selected' : ''}`}
+                      onClick={() => {
+                        setSelectedCompareTargetId(item.id)
+                        setComparisonError('')
+                        setComparisonData(null)
+                      }}
+                    >
+                      <div className="mypage-compare-candidate-meta">
+                        <span>{formatSavedDate(item.analysis_generated_at || item.created_at, false)}</span>
+                        <span>{summary.days}일 기준</span>
+                      </div>
+                      <strong>{item.profile_name || item.github_username}</strong>
+                      <p>{summary.headline}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+
+            {comparisonError ? (
+              <p className="comparison-error">{comparisonError}</p>
+            ) : null}
+
+            {comparisonData ? (
+              <section className="comparison-card comparison-card-inline">
+                <div className="insight-heading">
+                  <p className="insight-label">비교 피드백</p>
+                  <span className="insight-status">
+                    {comparisonData.comparison_source === 'ai' ? 'AI 비교 반영' : '기본 비교'}
+                  </span>
+                </div>
+
+                <div className="comparison-meta">
+                  <p>
+                    {`${formatSavedDate(
+                      selectedCompareTarget?.analysis_generated_at ||
+                        selectedCompareTarget?.created_at,
+                      false,
+                    )} 기록과 비교`}
+                  </p>
+                  <span>
+                    {formatSavedDate(
+                      compareSourceItem?.analysis_generated_at ||
+                        compareSourceItem?.created_at,
+                      false,
+                    )} 기준
+                  </span>
+                </div>
+
+                <h3>{comparisonData.comparison.headline}</h3>
+                <p>{comparisonData.comparison.growth}</p>
+                <p>{comparisonData.comparison.needs_attention}</p>
+                <p>{comparisonData.comparison.next_step}</p>
+
+                {comparisonData.comparison_summary?.reliability_note ? (
+                  <p className="comparison-note">
+                    {comparisonData.comparison_summary.reliability_note}
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
           </section>
         </div>
       ) : null}

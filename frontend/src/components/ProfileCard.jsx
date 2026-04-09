@@ -267,23 +267,6 @@ function buildCoverageNote(summary) {
   return `${buildWindowLabel(summary)} 이벤트는 GitHub 공개 Events API 제공 범위까지만 반영됩니다. 활동량이 많은 계정은 장기 기간에서 일부 오래된 이벤트가 제외될 수 있습니다.`
 }
 
-function formatComparisonDateLabel(value) {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return ''
-  }
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date)
-}
-
 function BookmarkIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -301,10 +284,6 @@ function ProfileCard({
   onSaveResult,
   saveLoading = false,
   canSave = false,
-  comparisonLoading = false,
-  comparisonData = null,
-  comparisonError = '',
-  comparisonContext = null,
 }) {
   const {
     profile,
@@ -352,36 +331,6 @@ function ProfileCard({
       : canSave
         ? '저장'
         : '로그인 후 저장'
-  const comparison = comparisonData?.comparison
-  const comparisonSummary = comparisonData?.comparison_summary
-  const comparisonSource = comparisonData?.comparison_source
-  const comparisonMeta = comparisonData?.comparison_meta
-  const comparisonStatusLabel = comparisonLoading
-    ? '비교 분석 중'
-    : comparisonSource === 'ai'
-      ? 'AI 비교 반영'
-      : comparison
-        ? '기본 비교'
-        : ''
-  const previousComparisonDateLabel = formatComparisonDateLabel(
-    comparisonSummary?.previous_generated_at ?? comparisonContext?.previousGeneratedAt,
-  )
-  const currentComparisonDateLabel = formatComparisonDateLabel(
-    comparisonSummary?.current_generated_at ?? comparisonContext?.currentGeneratedAt,
-  )
-  const comparisonWindowLabel =
-    comparisonSummary?.window_label ??
-    buildWindowLabel({ window_days: comparisonContext?.windowDays })
-  const comparisonReliabilityNote = comparisonSummary?.reliability_note ?? ''
-  const comparisonHeadline =
-    comparison?.headline ?? '이전 저장 기록과의 변화를 분석하고 있습니다.'
-  const comparisonGrowth =
-    comparison?.growth ?? '이전 기록과 비교해 어떤 점이 또렷해졌는지 정리하고 있습니다.'
-  const comparisonNeedsAttention =
-    comparison?.needs_attention ??
-    '다음 기록에서 더 보완하면 좋은 포인트를 정리하고 있습니다.'
-  const comparisonNextStep =
-    comparison?.next_step ?? '다음 저장 기록에 바로 적용할 액션을 준비하고 있습니다.'
 
   const handleKakaoShare = useCallback(() => {
     const kakaoState = getKakaoReadyState()
@@ -614,53 +563,6 @@ function ProfileCard({
           <p>{improvementText}</p>
           <p>{nextStepText}</p>
         </section>
-
-        {comparisonContext ? (
-          <section className="comparison-card">
-            <div className="insight-heading">
-              <p className="insight-label">이전 기록과 비교</p>
-              {comparisonStatusLabel ? (
-                <span className="insight-status">{comparisonStatusLabel}</span>
-              ) : null}
-            </div>
-
-            <div className="comparison-meta">
-              <p>
-                {previousComparisonDateLabel
-                  ? `${previousComparisonDateLabel} 저장본과 비교`
-                  : `${comparisonWindowLabel} 직전 기록과 비교`}
-              </p>
-              {currentComparisonDateLabel ? (
-                <span>{`${currentComparisonDateLabel} 기준`}</span>
-              ) : null}
-            </div>
-
-            {comparisonError ? (
-              <p className="comparison-error">{comparisonError}</p>
-            ) : (
-              <>
-                <h3>{comparisonHeadline}</h3>
-                <p>{comparisonGrowth}</p>
-                <p>{comparisonNeedsAttention}</p>
-                <p>{comparisonNextStep}</p>
-                {comparisonContext?.previousHeadline ? (
-                  <p className="comparison-footnote">
-                    이전 기록 메모: {comparisonContext.previousHeadline}
-                  </p>
-                ) : null}
-              </>
-            )}
-
-            {comparisonReliabilityNote ? (
-              <p className="comparison-note">{comparisonReliabilityNote}</p>
-            ) : null}
-            {comparisonMeta?.source_detail?.startsWith('generation_failed') ? (
-              <p className="comparison-note">
-                AI 비교 생성에 실패해 기본 비교 요약으로 표시했습니다.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
 
         <div className="metric-grid">
           <div className="metric-card">

@@ -541,3 +541,124 @@
   margin-top: 6px;
 }
 
+.mypage-compare-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(6, 10, 18, 0.58);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.mypage-compare-dialog {
+  display: grid;
+  gap: 18px;
+  width: min(760px, 100%);
+  max-height: min(92vh, 920px);
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid rgba(101, 118, 150, 0.72);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(86, 146, 232, 0.16), transparent 24%),
+    linear-gradient(180deg, rgba(20, 28, 46, 0.98), rgba(28, 35, 55, 0.98));
+  box-shadow: 0 30px 68px rgba(7, 12, 24, 0.36);
+}
+
+.mypage-compare-header h3,
+.mypage-compare-current h4 {
+  margin: 0 0 8px;
+  color: #f4f7fb;
+}
+
+.mypage-compare-header p,
+.mypage-compare-current p {
+  margin: 0;
+  color: #9fb0c9;
+  line-height: 1.65;
+}
+
+.mypage-compare-current,
+.mypage-compare-selector {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(101, 118, 150, 0.5);
+  border-radius: 22px;
+  background: rgba(29, 38, 60, 0.74);
+}
+
+.mypage-compare-label {
+  margin: 0;
+  color: #8db5e8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mypage-compare-selector-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.mypage-compare-candidate-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mypage-compare-candidate {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(98, 116, 151, 0.46);
+  border-radius: 18px;
+  color: #eaf1fb;
+  background: rgba(34, 42, 64, 0.72);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.mypage-compare-candidate:hover {
+  transform: translateY(-1px);
+  border-color: rgba(122, 149, 208, 0.82);
+  background: rgba(42, 53, 82, 0.82);
+}
+
+.mypage-compare-candidate.is-selected {
+  border-color: rgba(134, 201, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(134, 201, 255, 0.35);
+}
+
+.mypage-compare-candidate strong {
+  color: #f4f7fb;
+}
+
+.mypage-compare-candidate p {
+  margin: 0;
+  color: #cbd7e7;
+  line-height: 1.6;
+}
+
+.mypage-compare-candidate-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #9fb0c9;
+  font-size: 0.84rem;
+}
+
+.comparison-card-inline {
+  margin-top: 0;
+}
+

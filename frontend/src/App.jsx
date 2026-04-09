@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  fetchGitHubComparison,
-  fetchGitHubFeedback,
-  fetchGitHubInsight,
-} from './api/github'
+import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
 import {
   deleteSavedResult,
   ensureUserProfile,
@@ -32,41 +28,8 @@ import {
   POLICY_MODAL_CONTENT,
   TRANSIENT_AUTH_MESSAGES,
 } from './constants/appContent'
-import {
-  buildResultUrl,
-  delay,
-  readCurrentRoute,
-  readSharedState,
-} from './utils/appRoute'
+import { buildResultUrl, delay, readCurrentRoute, readSharedState } from './utils/appRoute'
 import './App.css'
-
-function getSavedResultUsername(savedResult) {
-  return (
-    savedResult?.github_username ||
-    savedResult?.snapshot?.username ||
-    ''
-  )
-    .trim()
-    .toLowerCase()
-}
-
-function getSavedResultWindowDays(savedResult) {
-  return (
-    savedResult?.window_days ||
-    savedResult?.snapshot?.stats?.activity_summary?.window_days ||
-    DEFAULT_DAYS
-  )
-}
-
-function getSavedResultTimestamp(savedResult) {
-  const value =
-    savedResult?.analysis_generated_at ||
-    savedResult?.created_at ||
-    savedResult?.snapshot?.generated_at ||
-    ''
-  const time = new Date(value).getTime()
-  return Number.isNaN(time) ? 0 : time
-}
 
 const AUTH_MESSAGE_AUTO_CLEAR_VALUES = new Set([
   ...TRANSIENT_AUTH_MESSAGES,
@@ -80,7 +43,6 @@ function App() {
   const initialRouteRef = useRef(readCurrentRoute())
   const initialSearchDoneRef = useRef(false)
   const latestRequestRef = useRef('')
-  const latestComparisonRequestRef = useRef('')
 
   const [route, setRoute] = useState(readCurrentRoute())
   const [username, setUsername] = useState(initialState.username)
@@ -103,22 +65,8 @@ function App() {
   const [savedResultsLoading, setSavedResultsLoading] = useState(false)
   const [savedResultsError, setSavedResultsError] = useState('')
   const [deletingSavedResultId, setDeletingSavedResultId] = useState('')
-  const [comparisonLoading, setComparisonLoading] = useState(false)
-  const [comparisonData, setComparisonData] = useState(null)
-  const [comparisonError, setComparisonError] = useState('')
-  const [comparisonContext, setComparisonContext] = useState(null)
-  const [comparingSavedResultId, setComparingSavedResultId] = useState('')
 
   const activePolicy = policyModalKey ? POLICY_MODAL_CONTENT[policyModalKey] : null
-
-  const clearComparisonState = useCallback(() => {
-    latestComparisonRequestRef.current = ''
-    setComparisonLoading(false)
-    setComparisonData(null)
-    setComparisonError('')
-    setComparisonContext(null)
-    setComparingSavedResultId('')
-  }, [])
 
   const syncFromLocation = useCallback(() => {
     const nextRoute = readCurrentRoute()
@@ -133,11 +81,10 @@ function App() {
       setError('')
       setFeedbackLoading(false)
       setLoading(false)
-      clearComparisonState()
     }
 
     return { nextRoute, nextState }
-  }, [clearComparisonState])
+  }, [])
 
   const navigateToLanding = useCallback(() => {
     window.history.pushState({}, '', '/')
@@ -200,109 +147,66 @@ function App() {
     }
   }, [])
 
-  const findPreviousComparableResult = useCallback(
-    (savedResult) => {
-      if (!savedResult?.id) {
-        return null
-      }
+  const performSearch = useCallback(async (targetUsername, targetDays) => {
+    const requestKey = `${targetUsername}:${targetDays}`
+    latestRequestRef.current = requestKey
+    setLoading(true)
+    setFeedbackLoading(false)
+    setError('')
 
-      const targetUsername = getSavedResultUsername(savedResult)
-      const targetWindowDays = getSavedResultWindowDays(savedResult)
-      const relatedItems = savedResults
-        .filter((item) => {
-          return (
-            item?.id &&
-            item.snapshot &&
-            getSavedResultUsername(item) === targetUsername &&
-            getSavedResultWindowDays(item) === targetWindowDays
-          )
-        })
-        .sort(
-          (left, right) =>
-            getSavedResultTimestamp(right) - getSavedResultTimestamp(left),
-        )
-
-      const currentIndex = relatedItems.findIndex((item) => item.id === savedResult.id)
-      if (currentIndex === -1) {
-        return null
-      }
-
-      return relatedItems[currentIndex + 1] ?? null
-    },
-    [savedResults],
-  )
-
-  const openSavedResultSnapshot = useCallback(
-    (savedResult) => {
-      const snapshot = savedResult?.snapshot
-      if (!snapshot) {
-        return false
-      }
-
-      const nextUsername = savedResult.github_username || snapshot.username || ''
-      const nextDays =
-        savedResult.window_days ||
-        snapshot?.stats?.activity_summary?.window_days ||
-        DEFAULT_DAYS
-
-      setUserData(snapshot)
-      setUsername(nextUsername)
-      setSelectedDays(nextDays)
-      setError('')
-      setFeedbackLoading(false)
-      navigateToResult(nextUsername, nextDays)
-      return true
-    },
-    [navigateToResult],
-  )
-
-  const performSearch = useCallback(
-    async (targetUsername, targetDays) => {
-      const requestKey = `${targetUsername}:${targetDays}`
-      latestRequestRef.current = requestKey
-      setLoading(true)
-      setFeedbackLoading(false)
-      setError('')
-      clearComparisonState()
+    try {
+      let data
 
       try {
-        let data
+        data = await fetchGitHubInsight(targetUsername, targetDays)
+      } catch (firstError) {
+        const message = String(firstError?.message ?? '')
+        const shouldRetry =
+          message.includes('잠시') ||
+          message.includes('응답') ||
+          message.includes('다시 시도')
 
-        try {
-          data = await fetchGitHubInsight(targetUsername, targetDays)
-        } catch (firstError) {
-          const message = String(firstError?.message ?? '')
-          const shouldRetry =
-            message.includes('잠시') ||
-            message.includes('응답') ||
-            message.includes('다시 시도')
-
-          if (!shouldRetry) {
-            throw firstError
-          }
-
-          await delay(900)
-          data = await fetchGitHubInsight(targetUsername, targetDays)
+        if (!shouldRetry) {
+          throw firstError
         }
 
+        await delay(900)
+        data = await fetchGitHubInsight(targetUsername, targetDays)
+      }
+
+      if (latestRequestRef.current !== requestKey) {
+        return
+      }
+
+      setUserData(data)
+
+      if (!data.feedback_pending) {
+        return
+      }
+
+      setFeedbackLoading(true)
+
+      try {
+        const feedbackData = await fetchGitHubFeedback(targetUsername, targetDays)
         if (latestRequestRef.current !== requestKey) {
           return
         }
 
-        setUserData(data)
-
-        if (!data.feedback_pending) {
-          return
-        }
-
-        setFeedbackLoading(true)
-
-        try {
-          const feedbackData = await fetchGitHubFeedback(targetUsername, targetDays)
-          if (latestRequestRef.current !== requestKey) {
-            return
+        setUserData((current) => {
+          if (!current || current.username !== targetUsername) {
+            return current
           }
 
+          return {
+            ...current,
+            feedback: feedbackData.feedback,
+            feedback_source: feedbackData.feedback_source,
+            feedback_meta: feedbackData.feedback_meta,
+            feedback_pending: feedbackData.feedback_pending,
+          }
+        })
+      } catch {
+        if (latestRequestRef.current === requestKey) {
           setUserData((current) => {
             if (!current || current.username !== targetUsername) {
               return current
@@ -310,43 +214,26 @@ function App() {
 
             return {
               ...current,
-              feedback: feedbackData.feedback,
-              feedback_source: feedbackData.feedback_source,
-              feedback_meta: feedbackData.feedback_meta,
-              feedback_pending: feedbackData.feedback_pending,
+              feedback_pending: false,
             }
           })
-        } catch {
-          if (latestRequestRef.current === requestKey) {
-            setUserData((current) => {
-              if (!current || current.username !== targetUsername) {
-                return current
-              }
-
-              return {
-                ...current,
-                feedback_pending: false,
-              }
-            })
-          }
-        } finally {
-          if (latestRequestRef.current === requestKey) {
-            setFeedbackLoading(false)
-          }
-        }
-      } catch (requestError) {
-        if (latestRequestRef.current === requestKey) {
-          setUserData(null)
-          setError(requestError.message)
         }
       } finally {
         if (latestRequestRef.current === requestKey) {
-          setLoading(false)
+          setFeedbackLoading(false)
         }
       }
-    },
-    [clearComparisonState],
-  )
+    } catch (requestError) {
+      if (latestRequestRef.current === requestKey) {
+        setUserData(null)
+        setError(requestError.message)
+      }
+    } finally {
+      if (latestRequestRef.current === requestKey) {
+        setLoading(false)
+      }
+    }
+  }, [])
 
   const handleSearch = useCallback(
     async (
@@ -356,7 +243,6 @@ function App() {
       const normalizedUsername = username.trim()
 
       if (!normalizedUsername) {
-        clearComparisonState()
         setError('GitHub 아이디를 먼저 입력해주세요.')
         setUserData(null)
         return
@@ -368,13 +254,7 @@ function App() {
 
       await performSearch(normalizedUsername, overrideDays)
     },
-    [
-      clearComparisonState,
-      navigateToResult,
-      performSearch,
-      selectedDays,
-      username,
-    ],
+    [navigateToResult, performSearch, selectedDays, username],
   )
 
   const handleGoogleLogin = useCallback(async () => {
@@ -399,7 +279,6 @@ function App() {
       setSavedResultsError('')
       setUserProfile(null)
       setProfileMessage('')
-      clearComparisonState()
       if (route === 'mypage') {
         navigateToLanding()
       }
@@ -408,7 +287,7 @@ function App() {
     } finally {
       setAuthActionLoading(false)
     }
-  }, [clearComparisonState, navigateToLanding, route])
+  }, [navigateToLanding, route])
 
   const handleSaveCurrentResult = useCallback(async () => {
     if (!session) {
@@ -495,78 +374,25 @@ function App() {
 
   const handleOpenSavedResult = useCallback(
     (savedResult) => {
-      clearComparisonState()
-      openSavedResultSnapshot(savedResult)
-    },
-    [clearComparisonState, openSavedResultSnapshot],
-  )
-
-  const handleCompareSavedResult = useCallback(
-    async (savedResult) => {
-      const previousSavedResult = findPreviousComparableResult(savedResult)
-
-      if (!savedResult?.snapshot || !previousSavedResult?.snapshot) {
-        setSavedResultsError('같은 기간의 이전 저장 기록이 없어 비교할 수 없습니다.')
+      const snapshot = savedResult?.snapshot
+      if (!snapshot) {
         return
       }
 
-      const opened = openSavedResultSnapshot(savedResult)
-      if (!opened) {
-        return
-      }
+      const nextUsername = savedResult.github_username || snapshot.username || ''
+      const nextDays =
+        savedResult.window_days ||
+        snapshot?.stats?.activity_summary?.window_days ||
+        DEFAULT_DAYS
 
-      const requestKey = `${savedResult.id}:${previousSavedResult.id}`
-      latestComparisonRequestRef.current = requestKey
-      setComparisonLoading(true)
-      setComparisonData(null)
-      setComparisonError('')
-      setSavedResultsError('')
-      setComparingSavedResultId(savedResult.id)
-      setComparisonContext({
-        currentSavedResultId: savedResult.id,
-        previousSavedResultId: previousSavedResult.id,
-        currentGeneratedAt:
-          savedResult.analysis_generated_at ||
-          savedResult.created_at ||
-          savedResult.snapshot?.generated_at ||
-          '',
-        previousGeneratedAt:
-          previousSavedResult.analysis_generated_at ||
-          previousSavedResult.created_at ||
-          previousSavedResult.snapshot?.generated_at ||
-          '',
-        previousHeadline:
-          previousSavedResult.headline ||
-          previousSavedResult.snapshot?.feedback?.headline ||
-          '',
-        windowDays: getSavedResultWindowDays(savedResult),
-      })
-
-      try {
-        const nextComparisonData = await fetchGitHubComparison(
-          savedResult.snapshot,
-          previousSavedResult.snapshot,
-        )
-        if (latestComparisonRequestRef.current !== requestKey) {
-          return
-        }
-
-        setComparisonData(nextComparisonData)
-      } catch (comparisonRequestError) {
-        if (latestComparisonRequestRef.current === requestKey) {
-          setComparisonError(
-            comparisonRequestError.message ||
-              '이전 기록 비교 피드백을 불러오지 못했습니다.',
-          )
-        }
-      } finally {
-        if (latestComparisonRequestRef.current === requestKey) {
-          setComparisonLoading(false)
-          setComparingSavedResultId('')
-        }
-      }
+      setUserData(snapshot)
+      setUsername(nextUsername)
+      setSelectedDays(nextDays)
+      setError('')
+      setFeedbackLoading(false)
+      navigateToResult(nextUsername, nextDays)
     },
-    [findPreviousComparableResult, openSavedResultSnapshot],
+    [navigateToResult],
   )
 
   const handleDeleteSavedResult = useCallback(
@@ -589,9 +415,7 @@ function App() {
 
       try {
         await deleteSavedResult(session, savedResult.id)
-        setSavedResults((current) =>
-          current.filter((item) => item.id !== savedResult.id),
-        )
+        setSavedResults((current) => current.filter((item) => item.id !== savedResult.id))
         setAuthMessage('저장한 결과를 삭제했습니다.')
       } catch (deleteError) {
         setSavedResultsError(
@@ -609,7 +433,6 @@ function App() {
       const { nextRoute, nextState } = syncFromLocation()
 
       if (nextRoute === 'result' && nextState.username) {
-        clearComparisonState()
         void performSearch(nextState.username, nextState.days)
       }
 
@@ -620,7 +443,7 @@ function App() {
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [clearComparisonState, loadSavedResults, performSearch, session, syncFromLocation])
+  }, [loadSavedResults, performSearch, session, syncFromLocation])
 
   useEffect(() => {
     if (initialSearchDoneRef.current) {
@@ -633,10 +456,7 @@ function App() {
       initialRouteRef.current === 'result' &&
       initialStateRef.current.username
     ) {
-      void performSearch(
-        initialStateRef.current.username,
-        initialStateRef.current.days,
-      )
+      void performSearch(initialStateRef.current.username, initialStateRef.current.days)
     }
   }, [performSearch])
 
@@ -808,9 +628,7 @@ function App() {
                   void handleSearch(days, { navigate: true, replace: true })
                 }
               }}
-              onSearch={() =>
-                handleSearch(selectedDays, { navigate: true, replace: true })
-              }
+              onSearch={() => handleSearch(selectedDays, { navigate: true, replace: true })}
             />
 
             {error ? <p className="status-message error-message">{error}</p> : null}
@@ -824,10 +642,6 @@ function App() {
                 onSaveResult={handleSaveCurrentResult}
                 saveLoading={saveLoading}
                 canSave={Boolean(session)}
-                comparisonLoading={comparisonLoading}
-                comparisonData={comparisonData}
-                comparisonError={comparisonError}
-                comparisonContext={comparisonContext}
               />
             ) : (
               <div className="empty-state result-empty-state">
@@ -855,13 +669,10 @@ function App() {
           error={savedResultsError}
           onRefresh={() => loadSavedResults(session)}
           onOpenResult={handleOpenSavedResult}
-          onCompareResult={handleCompareSavedResult}
-          getComparableSavedResult={findPreviousComparableResult}
           onGoogleLogin={handleGoogleLogin}
           onSaveNickname={handleSaveNickname}
           onDeleteResult={handleDeleteSavedResult}
           deletingId={deletingSavedResultId}
-          comparingId={comparingSavedResultId}
         />
       ) : null}
 
