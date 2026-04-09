@@ -130,13 +130,19 @@
   }
 
   .mypage-calendar-panel,
-  .mypage-day-sheet {
+  .mypage-day-sheet,
+  .mypage-compare-dialog {
     padding: 22px;
     border-radius: 24px;
   }
 
   .mypage-calendar-grid {
     gap: 8px;
+  }
+
+  .mypage-compare-selector-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .mypage-calendar-cell {
@@ -226,12 +232,14 @@
     align-self: flex-start;
   }
 
-  .mypage-day-sheet-backdrop {
+  .mypage-day-sheet-backdrop,
+  .mypage-compare-backdrop {
     align-items: flex-end;
     padding: 10px;
   }
 
-  .mypage-day-sheet {
+  .mypage-day-sheet,
+  .mypage-compare-dialog {
     width: 100%;
     height: min(82vh, 760px);
     border-bottom-right-radius: 0;
