@@ -79,6 +79,12 @@
   transform: translateY(-1px);
 }
 
+.mypage-primary-button:disabled,
+.mypage-secondary-button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
 .auth-menu {
   position: relative;
 }

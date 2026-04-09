@@ -81,13 +81,26 @@ function BackIcon() {
   )
 }
 
-function formatSavedDate(value) {
+function parseDateValue(value) {
   if (!value) {
-    return ''
+    return null
+  }
+
+  if (typeof value === 'string') {
+    const plainDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (plainDateMatch) {
+      const [, year, month, day] = plainDateMatch
+      return new Date(Number(year), Number(month) - 1, Number(day))
+    }
   }
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function formatSavedDate(value) {
+  const date = parseDateValue(value)
+  if (!date) {
     return ''
   }
 
@@ -118,8 +131,8 @@ function getSavedDateKey(savedResult) {
     savedResult?.snapshot?.generated_at ||
     savedResult?.created_at
 
-  const date = new Date(candidate)
-  if (Number.isNaN(date.getTime())) {
+  const date = parseDateValue(candidate)
+  if (!date) {
     return ''
   }
 
@@ -149,8 +162,12 @@ function formatMonthLabel(date) {
 }
 
 function formatShortSavedLabel(savedResult) {
-  const username = savedResult?.github_username || savedResult?.snapshot?.username || 'result'
-  const days = savedResult?.window_days || savedResult?.snapshot?.stats?.activity_summary?.window_days || 30
+  const username =
+    savedResult?.github_username || savedResult?.snapshot?.username || 'result'
+  const days =
+    savedResult?.window_days ||
+    savedResult?.snapshot?.stats?.activity_summary?.window_days ||
+    30
   return `${username} ${days}일`
 }
 
@@ -199,10 +216,13 @@ function MyPage({
   error,
   onRefresh,
   onOpenResult,
+  onCompareResult,
+  getComparableSavedResult,
   onGoogleLogin,
   onSaveNickname,
   onDeleteResult,
   deletingId,
+  comparingId,
 }) {
   const [nicknameInput, setNicknameInput] = useState('')
   const [editingNickname, setEditingNickname] = useState(false)
@@ -225,8 +245,12 @@ function MyPage({
 
     for (const value of map.values()) {
       value.sort((left, right) => {
-        const leftTime = new Date(left.analysis_generated_at || left.created_at || 0).getTime()
-        const rightTime = new Date(right.analysis_generated_at || right.created_at || 0).getTime()
+        const leftTime = parseDateValue(
+          left.analysis_generated_at || left.created_at || 0,
+        )?.getTime() ?? 0
+        const rightTime = parseDateValue(
+          right.analysis_generated_at || right.created_at || 0,
+        )?.getTime() ?? 0
         return rightTime - leftTime
       })
     }
@@ -237,7 +261,7 @@ function MyPage({
   const monthKeysWithItems = useMemo(() => {
     const keys = new Set()
 
-    groupedByDate.forEach((_items, dateKey) => {
+    groupedByDate.forEach((_savedItems, dateKey) => {
       keys.add(dateKey.slice(0, 7))
     })
 
@@ -251,20 +275,21 @@ function MyPage({
     }
 
     if (latestDateKey) {
-      return getMonthStart(new Date(latestDateKey))
+      const latestDate = parseDateValue(latestDateKey)
+      if (latestDate) {
+        return getMonthStart(latestDate)
+      }
     }
 
     return getMonthStart(new Date())
   }, [latestDateKey, selectedMonth])
 
   const monthKey = formatDateKey(resolvedMonth).slice(0, 7)
-  const availableKeysInMonth = useMemo(
-    () =>
-      [...groupedByDate.keys()]
-        .filter((dateKey) => dateKey.startsWith(monthKey))
-        .sort(),
-    [groupedByDate, monthKey],
-  )
+  const availableKeysInMonth = useMemo(() => {
+    return [...groupedByDate.keys()]
+      .filter((dateKey) => dateKey.startsWith(monthKey))
+      .sort()
+  }, [groupedByDate, monthKey])
 
   const selectedDateItems = groupedByDate.get(selectedDateKey) ?? []
   const calendarDays = useMemo(
@@ -272,9 +297,7 @@ function MyPage({
     [groupedByDate, resolvedMonth],
   )
 
-  const savedDayCountThisMonth = useMemo(() => {
-    return availableKeysInMonth.length
-  }, [availableKeysInMonth.length])
+  const savedDayCountThisMonth = availableKeysInMonth.length
   const isDaySheetOpen = Boolean(selectedDateKey)
 
   if (!session) {
@@ -283,9 +306,16 @@ function MyPage({
         <div className="mypage-empty">
           <p className="mypage-kicker">My Page</p>
           <h2>로그인하면 저장한 결과를 모아볼 수 있어요</h2>
-          <p>Google 로그인으로 연결하면 결과 저장과 다시 보기 기능을 바로 사용할 수 있습니다.</p>
+          <p>
+            Google 로그인으로 연결하면 결과 저장과 다시 보기 기능을 바로 사용할 수
+            있습니다.
+          </p>
           <div className="saved-result-actions">
-            <button type="button" className="mypage-primary-button" onClick={onGoogleLogin}>
+            <button
+              type="button"
+              className="mypage-primary-button"
+              onClick={onGoogleLogin}
+            >
               Google로 로그인
             </button>
           </div>
@@ -305,10 +335,16 @@ function MyPage({
               className="mypage-profile-avatar"
             />
           ) : (
-            <div className="mypage-profile-avatar mypage-profile-avatar-fallback" aria-hidden="true">
-              {(profile?.nickname || session.user?.email || '?').slice(0, 1).toUpperCase()}
+            <div
+              className="mypage-profile-avatar mypage-profile-avatar-fallback"
+              aria-hidden="true"
+            >
+              {(profile?.nickname || session.user?.email || '?')
+                .slice(0, 1)
+                .toUpperCase()}
             </div>
           )}
+
           <div className="mypage-profile-meta">
             <p className="mypage-kicker">Profile</p>
             <div className="mypage-profile-title-row">
@@ -321,12 +357,15 @@ function MyPage({
                   setEditingNickname((current) => !current)
                 }}
                 aria-label="닉네임 수정"
-                >
-                  <EditIcon />
-                </button>
+              >
+                <EditIcon />
+              </button>
             </div>
-            <p className="mypage-profile-email">{session.user?.email || '소셜 로그인 계정'}</p>
+            <p className="mypage-profile-email">
+              {session.user?.email || '이메일 계정'}
+            </p>
           </div>
+
           <div className="mypage-profile-actions">
             <button
               type="button"
@@ -346,8 +385,10 @@ function MyPage({
             className="mypage-profile-form"
             onSubmit={async (event) => {
               event.preventDefault()
-              await onSaveNickname(nicknameInput)
-              setEditingNickname(false)
+              const saved = await onSaveNickname(nicknameInput)
+              if (saved) {
+                setEditingNickname(false)
+              }
             }}
           >
             <div className="mypage-profile-controls">
@@ -360,8 +401,12 @@ function MyPage({
                 placeholder="닉네임을 입력하세요"
                 disabled={profileLoading || profileSaving}
               />
-              <button type="submit" className="mypage-primary-button" disabled={profileLoading || profileSaving}>
-                {profileSaving ? '저장 중...' : '저장'}
+              <button
+                type="submit"
+                className="mypage-primary-button"
+                disabled={profileLoading || profileSaving}
+              >
+                {profileSaving ? '저장 중..' : '저장'}
               </button>
               <button
                 type="button"
@@ -376,12 +421,14 @@ function MyPage({
               </button>
             </div>
             <p className="mypage-profile-help">
-              2자 이상 10자 이하로 입력해주세요. 중복 닉네임은 저장할 수 없습니다.
+              2자 이상 10자 이하로 입력해주세요. 중복 닉네임은 사용할 수 없습니다.
             </p>
           </form>
         ) : null}
 
-        {profileMessage ? <p className="mypage-profile-message">{profileMessage}</p> : null}
+        {profileMessage ? (
+          <p className="mypage-profile-message">{profileMessage}</p>
+        ) : null}
       </section>
 
       {error ? <p className="status-message error-message">{error}</p> : null}
@@ -395,7 +442,9 @@ function MyPage({
       {!loading && items.length === 0 ? (
         <div className="mypage-empty">
           <h3>아직 저장한 결과가 없어요</h3>
-          <p>분석 결과 화면에서 저장 버튼을 누르면 여기에 기록이 날짜별로 쌓입니다.</p>
+          <p>
+            분석 결과 화면에서 저장 버튼을 누르면 여기에 날짜별로 기록이 쌓입니다.
+          </p>
         </div>
       ) : null}
 
@@ -406,14 +455,18 @@ function MyPage({
               <div>
                 <p className="mypage-kicker">Archive</p>
                 <h3>{formatMonthLabel(resolvedMonth)}</h3>
-                <p>이달에 기록된 저장 날짜 {savedDayCountThisMonth}일</p>
+                <p>이달에 기록이 남은 날짜 {savedDayCountThisMonth}일</p>
               </div>
 
               <div className="mypage-calendar-nav">
                 <button
                   type="button"
                   className="mypage-calendar-nav-button"
-                  onClick={() => setSelectedMonth((current) => addMonths(current ?? resolvedMonth, -1))}
+                  onClick={() =>
+                    setSelectedMonth((current) =>
+                      addMonths(current ?? resolvedMonth, -1),
+                    )
+                  }
                   aria-label="이전 달"
                 >
                   <ChevronLeftIcon />
@@ -421,7 +474,11 @@ function MyPage({
                 <button
                   type="button"
                   className="mypage-calendar-nav-button"
-                  onClick={() => setSelectedMonth((current) => addMonths(current ?? resolvedMonth, 1))}
+                  onClick={() =>
+                    setSelectedMonth((current) =>
+                      addMonths(current ?? resolvedMonth, 1),
+                    )
+                  }
                   aria-label="다음 달"
                 >
                   <ChevronRightIcon />
@@ -444,7 +501,11 @@ function MyPage({
                   <button
                     key={day.dateKey}
                     type="button"
-                    className={`mypage-calendar-cell${day.isCurrentMonth ? '' : ' is-muted'}${day.items.length ? ' has-items' : ''}${isSelected ? ' is-selected' : ''}`}
+                    className={`mypage-calendar-cell${
+                      day.isCurrentMonth ? '' : ' is-muted'
+                    }${day.items.length ? ' has-items' : ''}${
+                      isSelected ? ' is-selected' : ''
+                    }`}
                     onClick={() => {
                       setSelectedDateKey(day.dateKey)
                       if (!isSameMonth(day.date, resolvedMonth)) {
@@ -452,7 +513,9 @@ function MyPage({
                       }
                     }}
                   >
-                    <span className="mypage-calendar-date-number">{day.date.getDate()}</span>
+                    <span className="mypage-calendar-date-number">
+                      {day.date.getDate()}
+                    </span>
 
                     {day.items.length ? (
                       <div className="mypage-calendar-labels">
@@ -462,7 +525,9 @@ function MyPage({
                           </span>
                         ))}
                         {day.items.length > previewItems.length ? (
-                          <span className="mypage-calendar-more">+{day.items.length - previewItems.length}</span>
+                          <span className="mypage-calendar-more">
+                            +{day.items.length - previewItems.length}
+                          </span>
                         ) : null}
                       </div>
                     ) : (
@@ -473,7 +538,6 @@ function MyPage({
               })}
             </div>
           </div>
-
         </section>
       ) : null}
 
@@ -487,7 +551,12 @@ function MyPage({
             }
           }}
         >
-          <section className="mypage-day-sheet" role="dialog" aria-modal="true" aria-label="저장 기록 상세">
+          <section
+            className="mypage-day-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="저장 기록 상세"
+          >
             <div className="mypage-day-sheet-topbar">
               <button
                 type="button"
@@ -498,7 +567,10 @@ function MyPage({
                 <span>{`${resolvedMonth.getFullYear()}년 ${resolvedMonth.getMonth() + 1}월`}</span>
               </button>
               <span className="mypage-day-badge">
-                {monthKeysWithItems.has(selectedDateKey.slice(0, 7)) && selectedDateItems.length ? 'Saved' : 'Empty'}
+                {monthKeysWithItems.has(selectedDateKey.slice(0, 7)) &&
+                selectedDateItems.length
+                  ? 'Saved'
+                  : 'Empty'}
               </span>
             </div>
 
@@ -509,7 +581,7 @@ function MyPage({
                 <p>
                   {selectedDateItems.length
                     ? `${selectedDateItems.length}개의 저장 기록이 있습니다.`
-                    : '이 날짜에는 저장된 기록이 없습니다.'}
+                    : '이 날짜에는 저장한 기록이 없습니다.'}
                 </p>
               </div>
             </div>
@@ -518,6 +590,14 @@ function MyPage({
               {selectedDateItems.length ? (
                 selectedDateItems.map((item) => {
                   const summary = getSummary(item)
+                  const comparableItem = getComparableSavedResult?.(item)
+                  const canCompare = Boolean(comparableItem)
+                  const compareButtonLabel =
+                    comparingId === item.id
+                      ? '비교 중..'
+                      : canCompare
+                        ? '비교하기'
+                        : '비교 기록 없음'
 
                   return (
                     <article key={item.id} className="saved-result-card saved-result-card-day">
@@ -540,10 +620,18 @@ function MyPage({
                         <button
                           type="button"
                           className="mypage-secondary-button"
+                          onClick={() => onCompareResult(item)}
+                          disabled={!canCompare || comparingId === item.id}
+                        >
+                          {compareButtonLabel}
+                        </button>
+                        <button
+                          type="button"
+                          className="mypage-secondary-button"
                           onClick={() => onDeleteResult(item)}
                           disabled={deletingId === item.id}
                         >
-                          {deletingId === item.id ? '삭제 중...' : '삭제'}
+                          {deletingId === item.id ? '삭제 중..' : '삭제'}
                         </button>
                       </div>
                     </article>
@@ -552,7 +640,10 @@ function MyPage({
               ) : (
                 <div className="mypage-day-empty">
                   <h4>저장 기록이 없는 날짜예요</h4>
-                  <p>이 날짜에는 분석 결과를 저장하지 않았습니다. 다른 날짜를 눌러 기록을 확인해보세요.</p>
+                  <p>
+                    이 날짜에는 분석 결과를 저장하지 않았습니다. 다른 날짜를 눌러
+                    기록을 확인해보세요.
+                  </p>
                 </div>
               )}
             </div>

@@ -321,7 +321,8 @@
 
 .metric-card,
 .detail-card,
-.insight-card {
+.insight-card,
+.comparison-card {
   padding: 20px;
   border: 1px solid rgba(94, 111, 143, 0.82);
   border-radius: 24px;
@@ -336,7 +337,16 @@
     linear-gradient(180deg, rgba(32, 40, 63, 0.98), rgba(28, 35, 56, 0.98));
 }
 
-.insight-card h3 {
+.comparison-card {
+  margin-top: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(109, 164, 232, 0.16), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(86, 193, 138, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(27, 36, 58, 0.98), rgba(24, 33, 53, 0.98));
+}
+
+.insight-card h3,
+.comparison-card h3 {
   margin: 0 0 12px;
   font-size: 1.5rem;
   color: #f4f7fb;
@@ -351,11 +361,13 @@
   align-items: center;
 }
 
-.insight-card p:last-child {
+.insight-card p:last-child,
+.comparison-card p:last-child {
   margin-bottom: 0;
 }
 
-.insight-card p {
+.insight-card p,
+.comparison-card p {
   line-height: 1.7;
   word-break: keep-all;
 }
@@ -379,6 +391,35 @@
   font-size: 0.78rem;
   letter-spacing: 0.04em;
   background: rgba(63, 80, 115, 0.4);
+}
+
+.comparison-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 14px;
+  color: #9fb4d2;
+  font-size: 0.9rem;
+}
+
+.comparison-meta p,
+.comparison-meta span {
+  margin: 0;
+}
+
+.comparison-note,
+.comparison-footnote {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #c9d8ea;
+  background: rgba(28, 37, 58, 0.66);
+  border: 1px solid rgba(111, 132, 174, 0.24);
+}
+
+.comparison-error {
+  margin: 0;
+  color: #fecaca;
 }
 
 .metric-label {

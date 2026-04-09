@@ -1,6 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchGitHubFeedback, fetchGitHubInsight } from './api/github'
-import { deleteSavedResult, ensureUserProfile, fetchSavedResults, getAnalysisDateKey, getCurrentSession, saveAnalysisResult, signInWithGoogle, signOutFromSupabase, subscribeToAuthChanges, updateUserNickname } from './lib/supabase'
+import {
+  fetchGitHubComparison,
+  fetchGitHubFeedback,
+  fetchGitHubInsight,
+} from './api/github'
+import {
+  deleteSavedResult,
+  ensureUserProfile,
+  fetchSavedResults,
+  getAnalysisDateKey,
+  getCurrentSession,
+  saveAnalysisResult,
+  signInWithGoogle,
+  signOutFromSupabase,
+  subscribeToAuthChanges,
+  updateUserNickname,
+} from './lib/supabase'
 import { AuthMenu } from './components/AuthMenu'
 import { LandingPage } from './components/LandingPage'
 import { MyPage } from './components/MyPage'
@@ -17,8 +32,47 @@ import {
   POLICY_MODAL_CONTENT,
   TRANSIENT_AUTH_MESSAGES,
 } from './constants/appContent'
-import { buildResultUrl, delay, readCurrentRoute, readSharedState } from './utils/appRoute'
+import {
+  buildResultUrl,
+  delay,
+  readCurrentRoute,
+  readSharedState,
+} from './utils/appRoute'
 import './App.css'
+
+function getSavedResultUsername(savedResult) {
+  return (
+    savedResult?.github_username ||
+    savedResult?.snapshot?.username ||
+    ''
+  )
+    .trim()
+    .toLowerCase()
+}
+
+function getSavedResultWindowDays(savedResult) {
+  return (
+    savedResult?.window_days ||
+    savedResult?.snapshot?.stats?.activity_summary?.window_days ||
+    DEFAULT_DAYS
+  )
+}
+
+function getSavedResultTimestamp(savedResult) {
+  const value =
+    savedResult?.analysis_generated_at ||
+    savedResult?.created_at ||
+    savedResult?.snapshot?.generated_at ||
+    ''
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
+const AUTH_MESSAGE_AUTO_CLEAR_VALUES = new Set([
+  ...TRANSIENT_AUTH_MESSAGES,
+  '결과를 저장했어요.',
+  '저장한 결과를 삭제했습니다.',
+])
 
 function App() {
   const initialState = readSharedState()
@@ -26,6 +80,7 @@ function App() {
   const initialRouteRef = useRef(readCurrentRoute())
   const initialSearchDoneRef = useRef(false)
   const latestRequestRef = useRef('')
+  const latestComparisonRequestRef = useRef('')
 
   const [route, setRoute] = useState(readCurrentRoute())
   const [username, setUsername] = useState(initialState.username)
@@ -48,12 +103,27 @@ function App() {
   const [savedResultsLoading, setSavedResultsLoading] = useState(false)
   const [savedResultsError, setSavedResultsError] = useState('')
   const [deletingSavedResultId, setDeletingSavedResultId] = useState('')
+  const [comparisonLoading, setComparisonLoading] = useState(false)
+  const [comparisonData, setComparisonData] = useState(null)
+  const [comparisonError, setComparisonError] = useState('')
+  const [comparisonContext, setComparisonContext] = useState(null)
+  const [comparingSavedResultId, setComparingSavedResultId] = useState('')
 
   const activePolicy = policyModalKey ? POLICY_MODAL_CONTENT[policyModalKey] : null
 
-  const syncFromLocation = () => {
+  const clearComparisonState = useCallback(() => {
+    latestComparisonRequestRef.current = ''
+    setComparisonLoading(false)
+    setComparisonData(null)
+    setComparisonError('')
+    setComparisonContext(null)
+    setComparingSavedResultId('')
+  }, [])
+
+  const syncFromLocation = useCallback(() => {
     const nextRoute = readCurrentRoute()
     const nextState = readSharedState()
+
     setRoute(nextRoute)
     setUsername(nextState.username)
     setSelectedDays(nextState.days)
@@ -63,26 +133,27 @@ function App() {
       setError('')
       setFeedbackLoading(false)
       setLoading(false)
+      clearComparisonState()
     }
 
     return { nextRoute, nextState }
-  }
+  }, [clearComparisonState])
 
-  const navigateToLanding = () => {
+  const navigateToLanding = useCallback(() => {
     window.history.pushState({}, '', '/')
     syncFromLocation()
-  }
+  }, [syncFromLocation])
 
-  const navigateToResult = (nextUsername, nextDays, replace = false) => {
+  const navigateToResult = useCallback((nextUsername, nextDays, replace = false) => {
     const nextUrl = buildResultUrl(nextUsername, nextDays)
     window.history[replace ? 'replaceState' : 'pushState']({}, '', nextUrl)
     setRoute('result')
-  }
+  }, [])
 
-  const navigateToMyPage = () => {
+  const navigateToMyPage = useCallback(() => {
     window.history.pushState({}, '', '/mypage')
     setRoute('mypage')
-  }
+  }, [])
 
   const loadSavedResults = useCallback(async (activeSession) => {
     if (!activeSession) {
@@ -99,7 +170,8 @@ function App() {
       setSavedResults(nextItems)
     } catch (loadError) {
       setSavedResultsError(
-        loadError.message || '저장한 결과 목록을 불러오지 못했습니다. saved_results 테이블 구조를 확인해주세요.',
+        loadError.message ||
+          '저장한 결과 목록을 불러오지 못했습니다. saved_results 테이블 구성을 확인해주세요.',
       )
     } finally {
       setSavedResultsLoading(false)
@@ -120,73 +192,117 @@ function App() {
       setUserProfile(nextProfile)
     } catch (profileError) {
       setProfileMessage(
-        profileError.message || '프로필 정보를 불러오지 못했습니다. profiles 테이블 설정을 확인해주세요.',
+        profileError.message ||
+          '프로필 정보를 불러오지 못했습니다. profiles 테이블 설정을 확인해주세요.',
       )
     } finally {
       setProfileLoading(false)
     }
   }, [])
 
-  const performSearch = async (targetUsername, targetDays) => {
-    const requestKey = `${targetUsername}:${targetDays}`
-    latestRequestRef.current = requestKey
-    setLoading(true)
-    setFeedbackLoading(false)
-    setError('')
+  const findPreviousComparableResult = useCallback(
+    (savedResult) => {
+      if (!savedResult?.id) {
+        return null
+      }
 
-    try {
-      let data
+      const targetUsername = getSavedResultUsername(savedResult)
+      const targetWindowDays = getSavedResultWindowDays(savedResult)
+      const relatedItems = savedResults
+        .filter((item) => {
+          return (
+            item?.id &&
+            item.snapshot &&
+            getSavedResultUsername(item) === targetUsername &&
+            getSavedResultWindowDays(item) === targetWindowDays
+          )
+        })
+        .sort(
+          (left, right) =>
+            getSavedResultTimestamp(right) - getSavedResultTimestamp(left),
+        )
+
+      const currentIndex = relatedItems.findIndex((item) => item.id === savedResult.id)
+      if (currentIndex === -1) {
+        return null
+      }
+
+      return relatedItems[currentIndex + 1] ?? null
+    },
+    [savedResults],
+  )
+
+  const openSavedResultSnapshot = useCallback(
+    (savedResult) => {
+      const snapshot = savedResult?.snapshot
+      if (!snapshot) {
+        return false
+      }
+
+      const nextUsername = savedResult.github_username || snapshot.username || ''
+      const nextDays =
+        savedResult.window_days ||
+        snapshot?.stats?.activity_summary?.window_days ||
+        DEFAULT_DAYS
+
+      setUserData(snapshot)
+      setUsername(nextUsername)
+      setSelectedDays(nextDays)
+      setError('')
+      setFeedbackLoading(false)
+      navigateToResult(nextUsername, nextDays)
+      return true
+    },
+    [navigateToResult],
+  )
+
+  const performSearch = useCallback(
+    async (targetUsername, targetDays) => {
+      const requestKey = `${targetUsername}:${targetDays}`
+      latestRequestRef.current = requestKey
+      setLoading(true)
+      setFeedbackLoading(false)
+      setError('')
+      clearComparisonState()
 
       try {
-        data = await fetchGitHubInsight(targetUsername, targetDays)
-      } catch (firstError) {
-        const message = String(firstError?.message ?? '')
-        const shouldRetry =
-          message.includes('잠시') ||
-          message.includes('응답') ||
-          message.includes('다시 시도')
+        let data
 
-        if (!shouldRetry) {
-          throw firstError
+        try {
+          data = await fetchGitHubInsight(targetUsername, targetDays)
+        } catch (firstError) {
+          const message = String(firstError?.message ?? '')
+          const shouldRetry =
+            message.includes('잠시') ||
+            message.includes('응답') ||
+            message.includes('다시 시도')
+
+          if (!shouldRetry) {
+            throw firstError
+          }
+
+          await delay(900)
+          data = await fetchGitHubInsight(targetUsername, targetDays)
         }
 
-        await delay(900)
-        data = await fetchGitHubInsight(targetUsername, targetDays)
-      }
-
-      if (latestRequestRef.current !== requestKey) {
-        return
-      }
-
-      setUserData(data)
-
-      if (!data.feedback_pending) {
-        return
-      }
-
-      setFeedbackLoading(true)
-
-      try {
-        const feedbackData = await fetchGitHubFeedback(targetUsername, targetDays)
         if (latestRequestRef.current !== requestKey) {
           return
         }
 
-        setUserData((current) => {
-          if (!current || current.username !== targetUsername) {
-            return current
+        setUserData(data)
+
+        if (!data.feedback_pending) {
+          return
+        }
+
+        setFeedbackLoading(true)
+
+        try {
+          const feedbackData = await fetchGitHubFeedback(targetUsername, targetDays)
+          if (latestRequestRef.current !== requestKey) {
+            return
           }
 
-          return {
-            ...current,
-            feedback: feedbackData.feedback,
-            feedback_source: feedbackData.feedback_source,
-            feedback_meta: feedbackData.feedback_meta,
-            feedback_pending: feedbackData.feedback_pending,
-          }
-        })
-      } catch {
-        if (latestRequestRef.current === requestKey) {
           setUserData((current) => {
             if (!current || current.username !== targetUsername) {
               return current
@@ -194,47 +310,74 @@ function App() {
 
             return {
               ...current,
-              feedback_pending: false,
+              feedback: feedbackData.feedback,
+              feedback_source: feedbackData.feedback_source,
+              feedback_meta: feedbackData.feedback_meta,
+              feedback_pending: feedbackData.feedback_pending,
             }
           })
+        } catch {
+          if (latestRequestRef.current === requestKey) {
+            setUserData((current) => {
+              if (!current || current.username !== targetUsername) {
+                return current
+              }
+
+              return {
+                ...current,
+                feedback_pending: false,
+              }
+            })
+          }
+        } finally {
+          if (latestRequestRef.current === requestKey) {
+            setFeedbackLoading(false)
+          }
+        }
+      } catch (requestError) {
+        if (latestRequestRef.current === requestKey) {
+          setUserData(null)
+          setError(requestError.message)
         }
       } finally {
         if (latestRequestRef.current === requestKey) {
-          setFeedbackLoading(false)
+          setLoading(false)
         }
       }
-    } catch (requestError) {
-      if (latestRequestRef.current === requestKey) {
+    },
+    [clearComparisonState],
+  )
+
+  const handleSearch = useCallback(
+    async (
+      overrideDays = selectedDays,
+      options = { navigate: true, replace: false },
+    ) => {
+      const normalizedUsername = username.trim()
+
+      if (!normalizedUsername) {
+        clearComparisonState()
+        setError('GitHub 아이디를 먼저 입력해주세요.')
         setUserData(null)
-        setError(requestError.message)
+        return
       }
-    } finally {
-      if (latestRequestRef.current === requestKey) {
-        setLoading(false)
+
+      if (options.navigate !== false) {
+        navigateToResult(normalizedUsername, overrideDays, options.replace)
       }
-    }
-  }
 
-  const handleSearch = async (
-    overrideDays = selectedDays,
-    options = { navigate: true, replace: false },
-  ) => {
-    const normalizedUsername = username.trim()
+      await performSearch(normalizedUsername, overrideDays)
+    },
+    [
+      clearComparisonState,
+      navigateToResult,
+      performSearch,
+      selectedDays,
+      username,
+    ],
+  )
 
-    if (!normalizedUsername) {
-      setError('GitHub 아이디를 먼저 입력해주세요.')
-      setUserData(null)
-      return
-    }
-
-    if (options.navigate !== false) {
-      navigateToResult(normalizedUsername, overrideDays, options.replace)
-    }
-
-    await performSearch(normalizedUsername, overrideDays)
-  }
-
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = useCallback(async () => {
     setAuthActionLoading(true)
     setAuthMessage('')
 
@@ -244,9 +387,9 @@ function App() {
       setAuthMessage(loginError.message || 'Google 로그인 연결에 실패했습니다.')
       setAuthActionLoading(false)
     }
-  }
+  }, [])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setAuthActionLoading(true)
     setAuthMessage('')
 
@@ -256,6 +399,7 @@ function App() {
       setSavedResultsError('')
       setUserProfile(null)
       setProfileMessage('')
+      clearComparisonState()
       if (route === 'mypage') {
         navigateToLanding()
       }
@@ -264,11 +408,11 @@ function App() {
     } finally {
       setAuthActionLoading(false)
     }
-  }
+  }, [clearComparisonState, navigateToLanding, route])
 
-  const handleSaveCurrentResult = async () => {
+  const handleSaveCurrentResult = useCallback(async () => {
     if (!session) {
-      setAuthMessage('로그인 후 저장할 수 있어요.')
+      setAuthMessage('로그인 후에 결과를 저장할 수 있어요.')
       return
     }
 
@@ -277,16 +421,18 @@ function App() {
     }
 
     if (feedbackLoading || userData.feedback_pending) {
-      setAuthMessage('AI 요약 정리 후 저장할 수 있어요.')
+      setAuthMessage('AI 요약 정리가 끝난 뒤 저장할 수 있어요.')
       return
     }
 
     const currentUsername = (userData.username ?? '').trim().toLowerCase()
-    const currentWindowDays = userData.stats?.activity_summary?.window_days ?? selectedDays
+    const currentWindowDays =
+      userData.stats?.activity_summary?.window_days ?? selectedDays
     const currentAnalysisDate = getAnalysisDateKey(new Date())
     const isAlreadySaved = savedResults.some((item) => {
       const savedUsername = (item.github_username ?? '').trim().toLowerCase()
-      const savedWindowDays = item.window_days ?? item.snapshot?.stats?.activity_summary?.window_days
+      const savedWindowDays =
+        item.window_days ?? item.snapshot?.stats?.activity_summary?.window_days
       const savedAnalysisDate = getAnalysisDateKey(item)
 
       return (
@@ -297,7 +443,7 @@ function App() {
     })
 
     if (isAlreadySaved) {
-      setAuthMessage('오늘 기준으로는 이미 저장된 결과예요.')
+      setAuthMessage('오늘 기준으로 같은 사용자와 기간 기록은 이미 저장되어 있어요.')
       return
     }
 
@@ -309,82 +455,161 @@ function App() {
       setAuthMessage('결과를 저장했어요.')
       await loadSavedResults(session)
     } catch (saveError) {
-      setAuthMessage(saveError.message || '저장에 실패했어요.')
+      setAuthMessage(saveError.message || '결과 저장에 실패했습니다.')
     } finally {
       setSaveLoading(false)
     }
-  }
+  }, [
+    feedbackLoading,
+    loadSavedResults,
+    savedResults,
+    selectedDays,
+    session,
+    userData,
+  ])
 
-  const handleSaveNickname = async (nickname) => {
-    if (!session) {
-      setProfileMessage('로그인 후 닉네임을 변경할 수 있습니다.')
-      return
-    }
+  const handleSaveNickname = useCallback(
+    async (nickname) => {
+      if (!session) {
+        setProfileMessage('로그인 후에 닉네임을 변경할 수 있습니다.')
+        return false
+      }
 
-    setProfileSaving(true)
-    setProfileMessage('')
+      setProfileSaving(true)
+      setProfileMessage('')
 
-    try {
-      const nextProfile = await updateUserNickname(session, nickname)
-      setUserProfile(nextProfile)
-      setProfileMessage('닉네임이 저장되었습니다.')
-    } catch (profileError) {
-      setProfileMessage(profileError.message || '닉네임을 저장하지 못했습니다.')
-    } finally {
-      setProfileSaving(false)
-    }
-  }
+      try {
+        const nextProfile = await updateUserNickname(session, nickname)
+        setUserProfile(nextProfile)
+        setProfileMessage('닉네임이 저장되었습니다.')
+        return true
+      } catch (profileError) {
+        setProfileMessage(profileError.message || '닉네임을 저장하지 못했습니다.')
+        return false
+      } finally {
+        setProfileSaving(false)
+      }
+    },
+    [session],
+  )
 
-  const handleOpenSavedResult = (savedResult) => {
-    const snapshot = savedResult.snapshot
-    if (!snapshot) {
-      return
-    }
+  const handleOpenSavedResult = useCallback(
+    (savedResult) => {
+      clearComparisonState()
+      openSavedResultSnapshot(savedResult)
+    },
+    [clearComparisonState, openSavedResultSnapshot],
+  )
 
-    setUserData(snapshot)
-    setUsername(savedResult.github_username || snapshot.username || '')
-    setSelectedDays(savedResult.window_days || snapshot?.stats?.activity_summary?.window_days || DEFAULT_DAYS)
-    setError('')
-    setFeedbackLoading(false)
-    navigateToResult(
-      savedResult.github_username || snapshot.username || '',
-      savedResult.window_days || snapshot?.stats?.activity_summary?.window_days || DEFAULT_DAYS,
-    )
-  }
+  const handleCompareSavedResult = useCallback(
+    async (savedResult) => {
+      const previousSavedResult = findPreviousComparableResult(savedResult)
 
-  const handleDeleteSavedResult = async (savedResult) => {
-    if (!session || !savedResult?.id) {
-      return
-    }
+      if (!savedResult?.snapshot || !previousSavedResult?.snapshot) {
+        setSavedResultsError('같은 기간의 이전 저장 기록이 없어 비교할 수 없습니다.')
+        return
+      }
 
-    const shouldDelete = window.confirm(
-      `${savedResult.github_username} 분석 기록을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
-    )
+      const opened = openSavedResultSnapshot(savedResult)
+      if (!opened) {
+        return
+      }
 
-    if (!shouldDelete) {
-      return
-    }
+      const requestKey = `${savedResult.id}:${previousSavedResult.id}`
+      latestComparisonRequestRef.current = requestKey
+      setComparisonLoading(true)
+      setComparisonData(null)
+      setComparisonError('')
+      setSavedResultsError('')
+      setComparingSavedResultId(savedResult.id)
+      setComparisonContext({
+        currentSavedResultId: savedResult.id,
+        previousSavedResultId: previousSavedResult.id,
+        currentGeneratedAt:
+          savedResult.analysis_generated_at ||
+          savedResult.created_at ||
+          savedResult.snapshot?.generated_at ||
+          '',
+        previousGeneratedAt:
+          previousSavedResult.analysis_generated_at ||
+          previousSavedResult.created_at ||
+          previousSavedResult.snapshot?.generated_at ||
+          '',
+        previousHeadline:
+          previousSavedResult.headline ||
+          previousSavedResult.snapshot?.feedback?.headline ||
+          '',
+        windowDays: getSavedResultWindowDays(savedResult),
+      })
 
-    setDeletingSavedResultId(savedResult.id)
-    setSavedResultsError('')
-    setAuthMessage('')
+      try {
+        const nextComparisonData = await fetchGitHubComparison(
+          savedResult.snapshot,
+          previousSavedResult.snapshot,
+        )
+        if (latestComparisonRequestRef.current !== requestKey) {
+          return
+        }
 
-    try {
-      await deleteSavedResult(session, savedResult.id)
-      setSavedResults((current) => current.filter((item) => item.id !== savedResult.id))
-      setAuthMessage('저장한 결과를 삭제했습니다.')
-    } catch (deleteError) {
-      setSavedResultsError(deleteError.message || '저장한 결과를 삭제하지 못했습니다.')
-    } finally {
-      setDeletingSavedResultId('')
-    }
-  }
+        setComparisonData(nextComparisonData)
+      } catch (comparisonRequestError) {
+        if (latestComparisonRequestRef.current === requestKey) {
+          setComparisonError(
+            comparisonRequestError.message ||
+              '이전 기록 비교 피드백을 불러오지 못했습니다.',
+          )
+        }
+      } finally {
+        if (latestComparisonRequestRef.current === requestKey) {
+          setComparisonLoading(false)
+          setComparingSavedResultId('')
+        }
+      }
+    },
+    [findPreviousComparableResult, openSavedResultSnapshot],
+  )
+
+  const handleDeleteSavedResult = useCallback(
+    async (savedResult) => {
+      if (!session || !savedResult?.id) {
+        return
+      }
+
+      const shouldDelete = window.confirm(
+        `${savedResult.github_username} 분석 기록을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+      )
+
+      if (!shouldDelete) {
+        return
+      }
+
+      setDeletingSavedResultId(savedResult.id)
+      setSavedResultsError('')
+      setAuthMessage('')
+
+      try {
+        await deleteSavedResult(session, savedResult.id)
+        setSavedResults((current) =>
+          current.filter((item) => item.id !== savedResult.id),
+        )
+        setAuthMessage('저장한 결과를 삭제했습니다.')
+      } catch (deleteError) {
+        setSavedResultsError(
+          deleteError.message || '저장한 결과를 삭제하지 못했습니다.',
+        )
+      } finally {
+        setDeletingSavedResultId('')
+      }
+    },
+    [session],
+  )
 
   useEffect(() => {
     const handlePopState = () => {
       const { nextRoute, nextState } = syncFromLocation()
 
       if (nextRoute === 'result' && nextState.username) {
+        clearComparisonState()
         void performSearch(nextState.username, nextState.days)
       }
 
@@ -395,7 +620,7 @@ function App() {
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [loadSavedResults, session])
+  }, [clearComparisonState, loadSavedResults, performSearch, session, syncFromLocation])
 
   useEffect(() => {
     if (initialSearchDoneRef.current) {
@@ -404,10 +629,16 @@ function App() {
 
     initialSearchDoneRef.current = true
 
-    if (initialRouteRef.current === 'result' && initialStateRef.current.username) {
-      void performSearch(initialStateRef.current.username, initialStateRef.current.days)
+    if (
+      initialRouteRef.current === 'result' &&
+      initialStateRef.current.username
+    ) {
+      void performSearch(
+        initialStateRef.current.username,
+        initialStateRef.current.days,
+      )
     }
-  }, [loadSavedResults])
+  }, [performSearch])
 
   useEffect(() => {
     let mounted = true
@@ -485,12 +716,14 @@ function App() {
   }, [activePolicy])
 
   useEffect(() => {
-    if (!TRANSIENT_AUTH_MESSAGES.has(authMessage)) {
+    if (!AUTH_MESSAGE_AUTO_CLEAR_VALUES.has(authMessage)) {
       return undefined
     }
 
     const timeoutId = window.setTimeout(() => {
-      setAuthMessage((currentMessage) => (TRANSIENT_AUTH_MESSAGES.has(currentMessage) ? '' : currentMessage))
+      setAuthMessage((currentMessage) =>
+        AUTH_MESSAGE_AUTO_CLEAR_VALUES.has(currentMessage) ? '' : currentMessage,
+      )
     }, 2200)
 
     return () => {
@@ -515,7 +748,15 @@ function App() {
   }, [profileMessage])
 
   return (
-    <main className={`app-shell ${route === 'result' ? 'result-shell' : route === 'mypage' ? 'mypage-shell' : 'landing-shell'}`}>
+    <main
+      className={`app-shell ${
+        route === 'result'
+          ? 'result-shell'
+          : route === 'mypage'
+            ? 'mypage-shell'
+            : 'landing-shell'
+      }`}
+    >
       {route === 'landing' ? (
         <header className="app-topbar app-topbar-landing">
           <div className="app-topbar-actions">
@@ -567,7 +808,9 @@ function App() {
                   void handleSearch(days, { navigate: true, replace: true })
                 }
               }}
-              onSearch={() => handleSearch(selectedDays, { navigate: true, replace: true })}
+              onSearch={() =>
+                handleSearch(selectedDays, { navigate: true, replace: true })
+              }
             />
 
             {error ? <p className="status-message error-message">{error}</p> : null}
@@ -581,12 +824,19 @@ function App() {
                 onSaveResult={handleSaveCurrentResult}
                 saveLoading={saveLoading}
                 canSave={Boolean(session)}
+                comparisonLoading={comparisonLoading}
+                comparisonData={comparisonData}
+                comparisonError={comparisonError}
+                comparisonContext={comparisonContext}
               />
             ) : (
               <div className="empty-state result-empty-state">
                 <p className="empty-kicker">Result</p>
                 <h2>분석 결과를 준비하고 있습니다</h2>
-                <p>GitHub 아이디와 기간을 입력하면 요약, 언어 분포, 다음 액션까지 바로 보여드립니다.</p>
+                <p>
+                  GitHub 아이디와 기간을 입력하면 요약, 언어 분포, 다음 액션까지
+                  바로 보여드립니다.
+                </p>
               </div>
             )}
           </section>
@@ -605,10 +855,13 @@ function App() {
           error={savedResultsError}
           onRefresh={() => loadSavedResults(session)}
           onOpenResult={handleOpenSavedResult}
+          onCompareResult={handleCompareSavedResult}
+          getComparableSavedResult={findPreviousComparableResult}
           onGoogleLogin={handleGoogleLogin}
           onSaveNickname={handleSaveNickname}
           onDeleteResult={handleDeleteSavedResult}
           deletingId={deletingSavedResultId}
+          comparingId={comparingSavedResultId}
         />
       ) : null}
 

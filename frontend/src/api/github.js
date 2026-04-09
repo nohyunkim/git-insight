@@ -13,7 +13,7 @@ function toUserFacingError(error, fallbackMessage) {
 
   if (statusCode === 503) {
     return new Error(
-      '서버가 막 깨어나는 중이거나 GitHub API 연결이 잠시 불안정합니다. 잠깐 뒤 다시 시도해주세요.',
+      '서버 응답이 잠시 불안정합니다. 조금 뒤 다시 시도해주세요.',
     )
   }
 
@@ -25,7 +25,7 @@ function toUserFacingError(error, fallbackMessage) {
 
   if (error.code === 'ECONNABORTED') {
     return new Error(
-      '응답이 오래 걸리고 있습니다. 첫 요청이라면 서버가 깨어나는 중일 수 있으니 잠시 뒤 다시 시도해주세요.',
+      '응답이 오래 걸리고 있습니다. 잠시 뒤 다시 시도해주세요.',
     )
   }
 
@@ -46,7 +46,7 @@ export async function fetchGitHubInsight(username, days) {
   } catch (error) {
     throw toUserFacingError(
       error,
-      '유저 정보를 불러오지 못했습니다. 백엔드 서버 실행 상태와 GitHub 토큰 설정을 확인해주세요.',
+      '분석 정보를 불러오지 못했습니다. 백엔드 서버 상태와 GitHub 토큰 설정을 확인해주세요.',
     )
   }
 }
@@ -64,5 +64,24 @@ export async function fetchGitHubFeedback(username, days) {
     return response.data
   } catch (error) {
     throw toUserFacingError(error, 'AI 요약을 불러오지 못했습니다.')
+  }
+}
+
+export async function fetchGitHubComparison(currentSnapshot, previousSnapshot) {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/compare-feedback`,
+      {
+        current_snapshot: currentSnapshot,
+        previous_snapshot: previousSnapshot,
+      },
+      {
+        timeout: 20000,
+      },
+    )
+
+    return response.data
+  } catch (error) {
+    throw toUserFacingError(error, '이전 기록 비교 피드백을 불러오지 못했습니다.')
   }
 }
