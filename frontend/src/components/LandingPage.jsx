@@ -110,13 +110,13 @@ export function LandingPage({
             자주 묻는 질문
           </button>
           <button type="button" className="footer-link-button" onClick={() => onOpenPolicy('privacy')}>
-            개인정보 안내
+            개인정보처리방침
           </button>
           <button type="button" className="footer-link-button" onClick={() => onOpenPolicy('terms')}>
-            이용 안내
+            이용약관
           </button>
           <a href={feedbackFormUrl} target="_blank" rel="noreferrer">
-            문의/오류 제보
+            문의 및 오류 제보
           </a>
         </nav>
         <p>© 2026 Git Insight. All Rights Reserved.</p>
