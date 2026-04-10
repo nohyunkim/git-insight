@@ -21,6 +21,28 @@ def format_ranked_counts(values: dict, *, suffix: str, limit: int = 4):
     return ', '.join(f'{name} {count}{suffix}' for name, count in ranked)
 
 
+POLITE_SENTENCE_ENDING_PATTERN = re.compile(
+    r'(?:니다|세요|해요|이에요|예요|군요|네요|까요|드려요|줘요|아요|어요)(?:[.!?…]+)?$'
+)
+
+
+def split_feedback_sentences(text: str):
+    parts = re.split(r'(?<=[.!?])\s+|\n+', text.strip())
+    return [
+        part.strip(" \t\r\n\"'`“”‘’()[]{}")
+        for part in parts
+        if part.strip()
+    ]
+
+
+def uses_consistent_polite_tone(text: str):
+    sentences = split_feedback_sentences(text)
+    if not sentences:
+        return False
+
+    return all(POLITE_SENTENCE_ENDING_PATTERN.search(sentence) for sentence in sentences)
+
+
 def build_feedback(
     summary: dict,
     top_language: str | None,
@@ -160,6 +182,9 @@ def sanitize_feedback(payload: dict):
         or len(cleaned_feedback['next_step']) < 18
     ):
         return None, 'too_short'
+
+    if not all(uses_consistent_polite_tone(value) for value in cleaned_feedback.values()):
+        return None, 'non_polite_tone'
 
     return cleaned_feedback, 'ok'
 
@@ -396,18 +421,21 @@ def build_ai_prompt(
 - 톤: {style_notes['tone']}
 - headline: {style_notes['headline_rule']}
 - strength: {style_notes['strength_rule']}
+- 공통 말투: 모든 문장은 일관된 존댓말로만 작성한다.
 
 [작성 규칙]
 1. 자연스러운 한국어만 사용한다.
-2. 초보 개발자, 활동을 시작하셨군요, 仓库 같은 어색한 표현은 금지한다.
-3. 숫자를 기계적으로 나열하지 말고 흐름과 맥락을 먼저 설명한다.
-4. headline, strength, improvement, next_step는 서로 다른 문장으로 작성한다.
-5. strength 또는 improvement 중 최소 하나에는 실제 근거를 1개 이상 자연스럽게 녹여라. 예: Push 18회, 활동 일수 11일, PR 기록이 적다.
-6. improvement는 보완 포인트, next_step는 바로 실행할 제안에 집중한다.
-7. next_step에서 막연히 push를 늘리라고만 말하지 말고 구체 행동을 제안한다.
-8. 아래처럼 너무 안전하고 비슷한 문장은 피한다: "흐름이 보입니다", "조금 더 보완하면 좋습니다", "기록을 남겨보세요"만 반복하는 식의 문장.
-9. 서비스 문구처럼 짧고 또렷하게 쓰되, 계정별 차이가 느껴지게 작성한다.
-10. JSON 외 텍스트는 출력하지 않는다.
+2. 모든 문장은 존댓말로만 작성하고, 반말이나 해체, 서술형 "-다" 말투는 금지한다.
+3. 문장 끝은 "~습니다", "~보입니다", "~좋습니다", "~해보세요"처럼 공손한 표현으로 마무리한다.
+4. 초보 개발자, 활동을 시작하셨군요, 仓库 같은 어색한 표현은 금지한다.
+5. 숫자를 기계적으로 나열하지 말고 흐름과 맥락을 먼저 설명한다.
+6. headline, strength, improvement, next_step는 서로 다른 문장으로 작성한다.
+7. strength 또는 improvement 중 최소 하나에는 실제 근거를 1개 이상 자연스럽게 녹여라. 예: Push 18회, 활동 일수 11일, PR 기록이 적다.
+8. improvement는 보완 포인트, next_step는 바로 실행할 제안에 집중한다.
+9. next_step에서 막연히 push를 늘리라고만 말하지 말고 구체 행동을 제안한다.
+10. 아래처럼 너무 안전하고 비슷한 문장은 피한다: "흐름이 보입니다", "조금 더 보완하면 좋습니다", "기록을 남겨보세요"만 반복하는 식의 문장.
+11. 서비스 문구처럼 짧고 또렷하게 쓰되, 계정별 차이가 느껴지게 작성한다.
+12. JSON 외 텍스트는 출력하지 않는다.
 
 [응답 JSON 형식]
 {{

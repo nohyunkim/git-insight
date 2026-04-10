@@ -23,6 +23,7 @@ from feedback_utils import (
     build_strength_hints,
     format_ranked_counts,
     normalize_feedback,
+    uses_consistent_polite_tone,
     window_label,
 )
 
@@ -32,8 +33,8 @@ GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 ALLOWED_WINDOWS = {7, 30, 90, 180, 365}
 MAX_GITHUB_EVENT_PAGES = 3
 EVENT_API_RELIABLE_WINDOW_DAYS = 90
-FEEDBACK_PROMPT_VERSION = 'v2'
-COMPARISON_PROMPT_VERSION = 'v1'
+FEEDBACK_PROMPT_VERSION = 'v3'
+COMPARISON_PROMPT_VERSION = 'v2'
 
 # 실행 위치와 관계없이 루트 또는 backend 폴더의 .env를 읽습니다.
 load_dotenv(PROJECT_ROOT / '.env')
@@ -212,7 +213,10 @@ def generate_feedback_with_groq(
             messages=[
                 {
                     'role': 'system',
-                    'content': 'Return only valid JSON in natural Korean. No markdown.',
+                    'content': (
+                        'Return only valid JSON in natural Korean honorific speech. '
+                        'Use consistent 존댓말 only. No markdown.'
+                    ),
                 },
                 {
                     'role': 'user',
@@ -817,6 +821,9 @@ def normalize_comparison_feedback(payload: dict, fallback_feedback: dict):
             return fallback_feedback, f'missing_{field}'
         cleaned[field] = value[:max_length]
 
+    if not all(uses_consistent_polite_tone(value) for value in cleaned.values()):
+        return fallback_feedback, 'non_polite_tone'
+
     return cleaned, 'ai'
 
 
@@ -869,12 +876,15 @@ Delta
 
 Rules
 1. Write natural Korean without markdown.
-2. Focus on change from previous to current, not a generic profile review.
-3. growth must describe what improved or became clearer.
-4. needs_attention must describe what still looks weak or what declined.
-5. next_step must suggest one concrete action for the next saved record.
-6. Keep each field to one or two sentences.
-7. Do not mention raw JSON, prompts, or model limitations.
+2. Every field must use consistent polite Korean honorific speech only.
+3. Do not use casual speech, banmal, or plain "-다" narrative endings.
+4. End sentences politely, for example with forms like "~습니다", "~보입니다", or "~해보세요".
+5. Focus on change from previous to current, not a generic profile review.
+6. growth must describe what improved or became clearer.
+7. needs_attention must describe what still looks weak or what declined.
+8. next_step must suggest one concrete action for the next saved record.
+9. Keep each field to one or two sentences.
+10. Do not mention raw JSON, prompts, or model limitations.
 """.strip()
 
 
@@ -891,7 +901,10 @@ def generate_comparison_feedback_with_groq(summary: dict):
             messages=[
                 {
                     'role': 'system',
-                    'content': 'Return only valid JSON in natural Korean. No markdown.',
+                    'content': (
+                        'Return only valid JSON in natural Korean honorific speech. '
+                        'Use consistent 존댓말 only. No markdown.'
+                    ),
                 },
                 {
                     'role': 'user',
