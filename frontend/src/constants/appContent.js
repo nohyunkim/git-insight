@@ -57,7 +57,7 @@ export const POLICY_MODAL_CONTENT = {
     ],
   },
   privacy: {
-    title: '개인정보 처리 안내',
+    title: '개인정보처리방침',
     sections: [
       {
         heading: '어떤 정보를 다루나요?',
@@ -70,7 +70,7 @@ export const POLICY_MODAL_CONTENT = {
     ],
   },
   terms: {
-    title: '이용 안내',
+    title: '이용약관',
     sections: [
       {
         heading: '서비스 성격',
@@ -106,19 +106,19 @@ export const LANDING_CONTENT_SECTIONS = [
   {
     kicker: 'Why It Matters',
     title: 'GitHub 활동 분석이 중요한 이유',
-    summary: '포트폴리오나 공개 프로필에서 결과물뿐 아니라 과정과 리듬도 함께 읽히는 시대입니다.',
+    summary: '포트폴리오와 공개 프로필에서는 결과물뿐 아니라 작업 과정과 활동 흐름도 함께 읽히는 시대입니다.',
     points: [
-      '최근 활동의 흐름과 간격을 빠르게 읽을 수 있습니다.',
-      '채용, 협업, 포트폴리오 검토에서 공개 기록을 설명하기 쉬워집니다.',
+      '최근 활동의 흐름과 간격을 빠르게 파악할 수 있습니다.',
+      '채용, 협업, 포트폴리오 검토 상황에서 공개 기록을 더 쉽게 설명할 수 있습니다.',
     ],
     tags: ['공개 기록', '포트폴리오'],
   },
   {
     kicker: 'What We Read',
     title: '이 서비스가 읽는 데이터',
-    summary: '공개 레포, 저장소 언어, 이벤트 기록을 기반으로 최근 흐름을 기간별로 다시 정리합니다.',
+    summary: '공개 저장소, 사용 언어, 이벤트 기록을 바탕으로 최근 활동 흐름을 기간별로 다시 정리합니다.',
     points: [
-      '공개 프로필과 저장소, 이벤트를 기준으로 현재 흐름을 요약합니다.',
+      '공개 프로필, 저장소, 이벤트를 기준으로 현재 활동 흐름을 요약합니다.',
       '비공개 저장소와 조직 내부 작업은 충분히 반영되지 않을 수 있습니다.',
     ],
     tags: ['공개 데이터', '이벤트'],
@@ -134,16 +134,16 @@ export const CONTENT_LINKS = [
   {
     href: '/github-portfolio-guide.html',
     title: '좋은 GitHub 포트폴리오 만드는 법',
-    description: '공개 사용자 정보, README, 활동 흐름을 어떻게 정리하면 더 설득력 있게 보이는지 설명합니다.',
+    description: '공개 프로필, README, 활동 흐름을 어떻게 정리하면 더 설득력 있게 보이는지 설명하는 페이지입니다.',
   },
   {
     href: '/readme-writing-guide.html',
     title: 'README 작성 가이드',
-    description: '프로젝트 목적, 주요 기능, 실행 방법, 기술 선택 배경을 문서화하는 방법을 안내합니다.',
+    description: '프로젝트 목적, 주요 기능, 실행 방법, 기술 선택 배경을 어떻게 문서화하면 좋은지 안내하는 페이지입니다.',
   },
   {
     href: '/github-activity-interpretation.html',
     title: 'GitHub 활동 기록 해석법',
-    description: '활동량과 기록 패턴이 어떤 의미로 읽히는지 차분하게 풀어 설명합니다.',
+    description: '활동량과 기록 패턴이 어떤 의미로 읽히는지 차분하게 풀어 설명한 페이지입니다.',
   },
 ]
