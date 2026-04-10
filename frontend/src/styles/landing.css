@@ -1,6 +1,9 @@
 .landing-shell {
   width: min(1280px, calc(100% - 40px));
+  min-height: 100vh;
   padding-top: 28px;
+  display: flex;
+  flex-direction: column;
 }
 
 .mypage-shell {
@@ -623,7 +626,8 @@
 
 .landing-footer {
   width: min(760px, 100%);
-  margin: 48px auto 0;
+  margin: auto auto 0;
+  padding-top: 48px;
   display: grid;
   justify-items: center;
   gap: 16px;
