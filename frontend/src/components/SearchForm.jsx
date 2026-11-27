@@ -40,7 +40,7 @@ function SearchForm({
           <p className="search-kicker">Start With A Username</p>
           <h2 className="search-title">GitHub ID로 바로 분석</h2>
           <p className="search-subtitle">
-            선택한 기간 기준으로 활동 흐름, 언어 분포, 추천 인사이트를 한 번에 정리합니다.
+            확인 가능한 공개 이벤트와 분석 당시 공개 저장소 언어, 추천 인사이트를 한 번에 정리합니다.
           </p>
         </div>
       ) : null}

@@ -32,7 +32,7 @@ PROJECT_ROOT = BASE_DIR.parent
 GITHUB_TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 ALLOWED_WINDOWS = {7, 30, 90, 180, 365}
 MAX_GITHUB_EVENT_PAGES = 3
-EVENT_API_RELIABLE_WINDOW_DAYS = 90
+EVENT_API_WINDOW_DAYS = 30
 FEEDBACK_PROMPT_VERSION = 'v3'
 COMPARISON_PROMPT_VERSION = 'v2'
 
@@ -383,9 +383,11 @@ def summarize_analysis(
     events_incomplete: bool = False,
 ):
     now = datetime.now(timezone.utc)
-    window_start = now - timedelta(days=days)
+    event_window_days = min(days, EVENT_API_WINDOW_DAYS)
+    window_start = now - timedelta(days=event_window_days)
     recent_window_events = []
     active_days = set()
+    seen_event_ids = set()
 
     for event in events_data:
         event_type = event.get('type')
@@ -393,9 +395,14 @@ def summarize_analysis(
             continue
 
         created_at = parse_github_datetime(event.get('created_at'))
-        if created_at and created_at >= window_start:
+        event_id = event.get('id')
+        if event_id and event_id in seen_event_ids:
+            continue
+        if created_at and window_start <= created_at <= now:
             recent_window_events.append(event)
             active_days.add(created_at.date().isoformat())
+            if event_id:
+                seen_event_ids.add(event_id)
 
     summary_event_types = {}
     for event in recent_window_events:
@@ -415,11 +422,16 @@ def summarize_analysis(
 
     activity_summary = {
         'window_days': days,
-        'window_label': window_label(days),
+        'window_label': window_label(event_window_days),
+        'event_window_days': event_window_days,
+        'requested_window_label': window_label(days),
+        'event_source': 'github_public_events',
+        'language_source': 'current_public_repositories',
         'total_events_30d': len(recent_window_events),
         'push_events_30d': summary_event_types.get('PushEvent', 0),
         'active_days_30d': len(active_days),
-        'event_data_incomplete': events_incomplete or days > EVENT_API_RELIABLE_WINDOW_DAYS,
+        'event_data_incomplete': events_incomplete or days > EVENT_API_WINDOW_DAYS,
+        'event_page_incomplete': events_incomplete,
     }
 
     feedback = build_feedback(
@@ -455,7 +467,7 @@ def summarize_analysis(
 
 
 async def fetch_user_events(client: httpx.AsyncClient, username: str, headers: dict, days: int):
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=min(days, EVENT_API_WINDOW_DAYS))
     collected_events = []
     event_data_incomplete = False
 
@@ -467,6 +479,7 @@ async def fetch_user_events(client: httpx.AsyncClient, username: str, headers: d
         if response.status_code != 200:
             if page == 1:
                 return response, [], False
+            event_data_incomplete = True
             break
 
         page_events = response.json()
@@ -613,6 +626,11 @@ def top_ranked_key(values: dict):
     return max(values.items(), key=lambda item: (item[1], item[0]))[0]
 
 
+def recorded_event_window_days(activity: dict):
+    days = activity.get('event_window_days')
+    return days if type(days) is int and days in (7, 30) else None
+
+
 def build_comparison_summary(current_snapshot: dict, previous_snapshot: dict):
     current_username = normalize_username_or_400(current_snapshot.get('username', ''))
     previous_username = normalize_username_or_400(previous_snapshot.get('username', ''))
@@ -621,6 +639,8 @@ def build_comparison_summary(current_snapshot: dict, previous_snapshot: dict):
     previous_stats = previous_snapshot.get('stats', {})
     current_activity = current_stats.get('activity_summary', {})
     previous_activity = previous_stats.get('activity_summary', {})
+    current_event_days = recorded_event_window_days(current_activity)
+    previous_event_days = recorded_event_window_days(previous_activity)
 
     current_days = normalize_window_days(int(current_activity.get('window_days') or 0))
     previous_days = normalize_window_days(int(previous_activity.get('window_days') or 0))
@@ -683,22 +703,44 @@ def build_comparison_summary(current_snapshot: dict, previous_snapshot: dict):
     lost_languages = sorted(set(previous_languages) - set(current_languages))[:4]
 
     reliability_note = None
-    if current_data['event_data_incomplete'] or previous_data['event_data_incomplete']:
+    if current_event_days is None or previous_event_days is None:
+        reliability_note = (
+            '과거 저장 기록에는 실제 이벤트 관측 기간이 기록되지 않았습니다. '
+            '두 기록의 이벤트 수치가 동일한 기간을 나타낸다고 단정할 수 없습니다.'
+        )
+    elif current_event_days != previous_event_days:
+        reliability_note = (
+            '두 기록의 실제 이벤트 관측 기간이 달라 이벤트 수치를 같은 기간의 변화로 해석할 수 없습니다.'
+        )
+    elif current_days > EVENT_API_WINDOW_DAYS:
+        reliability_note = (
+            f'{window_label(current_days)}을 선택했지만 비교되는 이벤트 수치는 각 분석 시점의 '
+            '최근 30일 조회분이며 전체 선택 기간의 차이가 아닙니다.'
+        )
+    elif current_data['event_data_incomplete'] or previous_data['event_data_incomplete']:
         reliability_note = (
             f'{window_label(current_days)} 비교는 GitHub 공개 Events API 조회 한계로 '
-            '오래된 이벤트 일부가 빠질 수 있습니다.'
+            '일부 이벤트가 빠질 수 있습니다.'
         )
 
+    event_windows_comparable = (
+        current_event_days is not None and current_event_days == previous_event_days
+    )
     return {
         'username': current_username,
         'window_days': current_days,
-        'window_label': window_label(current_days),
+        'window_label': (
+            window_label(current_event_days)
+            if current_event_days is not None and current_event_days == previous_event_days
+            else f'{window_label(current_days)} 선택 기록'
+        ),
         'current': current_data,
         'previous': previous_data,
         'delta': delta,
         'gained_languages': gained_languages,
         'lost_languages': lost_languages,
         'reliability_note': reliability_note,
+        'event_windows_comparable': event_windows_comparable,
         'current_generated_at': current_data['generated_at'],
         'previous_generated_at': previous_data['generated_at'],
     }
@@ -709,6 +751,14 @@ def build_comparison_feedback(summary: dict):
     previous = summary['previous']
     delta = summary['delta']
     label = summary['window_label']
+
+    if summary.get('event_windows_comparable') is False:
+        return {
+            'headline': f'{label} 두 저장 기록을 나란히 확인할 수 있습니다.',
+            'growth': '두 기록의 공개 저장소와 언어 분포를 비교할 수 있습니다.',
+            'needs_attention': '과거 기록에는 실제 이벤트 관측 기간이 없어 이벤트 수치의 증감을 같은 기간의 변화로 해석할 수 없습니다.',
+            'next_step': '다음에는 실제 이벤트 관측 기간이 기록된 분석 결과끼리 비교해보세요.',
+        }
 
     positive_signals = []
     caution_signals = []
@@ -837,7 +887,8 @@ def build_comparison_prompt(summary: dict):
 
     return f"""
 You write concise Korean comparison feedback for saved GitHub activity snapshots.
-The two snapshots are from the same GitHub user and the same analysis window.
+The two snapshots are from the same GitHub user and the same selected analysis window.
+Their actual event observation windows may differ when an older snapshot lacks coverage metadata.
 Return only valid JSON with the keys headline, growth, needs_attention, next_step.
 
 Current snapshot
@@ -879,7 +930,7 @@ Rules
 2. Every field must use consistent polite Korean honorific speech only.
 3. Do not use casual speech, banmal, or plain "-다" narrative endings.
 4. End sentences politely, for example with forms like "~습니다", "~보입니다", or "~해보세요".
-5. Focus on change from previous to current, not a generic profile review.
+5. Focus on change from previous to current, not a generic profile review. Do not claim equal event coverage when the reliability note says it is unknown.
 6. growth must describe what improved or became clearer.
 7. needs_attention must describe what still looks weak or what declined.
 8. next_step must suggest one concrete action for the next saved record.
@@ -890,6 +941,9 @@ Rules
 
 def generate_comparison_feedback_with_groq(summary: dict):
     fallback_feedback = build_comparison_feedback(summary)
+
+    if summary.get('event_windows_comparable') is False:
+        return fallback_feedback, 'unrecorded_event_window'
 
     if AI_PROVIDER != 'groq' or not groq_client:
         return fallback_feedback, 'rule_based'
