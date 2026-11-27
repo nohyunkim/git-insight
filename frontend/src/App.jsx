@@ -29,6 +29,7 @@ import {
   TRANSIENT_AUTH_MESSAGES,
 } from './constants/appContent'
 import { buildResultUrl, delay, readCurrentRoute, readSharedState } from './utils/appRoute'
+import { createSearchRequestTracker } from './utils/searchRequest'
 import './App.css'
 
 const AUTH_MESSAGE_AUTO_CLEAR_VALUES = new Set([
@@ -42,7 +43,7 @@ function App() {
   const initialStateRef = useRef(initialState)
   const initialRouteRef = useRef(readCurrentRoute())
   const initialSearchDoneRef = useRef(false)
-  const latestRequestRef = useRef('')
+  const latestRequestRef = useRef(createSearchRequestTracker())
 
   const [route, setRoute] = useState(readCurrentRoute())
   const [username, setUsername] = useState(initialState.username)
@@ -148,8 +149,7 @@ function App() {
   }, [])
 
   const performSearch = useCallback(async (targetUsername, targetDays) => {
-    const requestKey = `${targetUsername}:${targetDays}`
-    latestRequestRef.current = requestKey
+    const requestId = latestRequestRef.current.start()
     setLoading(true)
     setFeedbackLoading(false)
     setError('')
@@ -174,7 +174,7 @@ function App() {
         data = await fetchGitHubInsight(targetUsername, targetDays)
       }
 
-      if (latestRequestRef.current !== requestKey) {
+      if (!latestRequestRef.current.isCurrent(requestId)) {
         return
       }
 
@@ -188,7 +188,7 @@ function App() {
 
       try {
         const feedbackData = await fetchGitHubFeedback(targetUsername, targetDays)
-        if (latestRequestRef.current !== requestKey) {
+        if (!latestRequestRef.current.isCurrent(requestId)) {
           return
         }
 
@@ -206,7 +206,7 @@ function App() {
           }
         })
       } catch {
-        if (latestRequestRef.current === requestKey) {
+        if (latestRequestRef.current.isCurrent(requestId)) {
           setUserData((current) => {
             if (!current || current.username !== targetUsername) {
               return current
@@ -219,17 +219,17 @@ function App() {
           })
         }
       } finally {
-        if (latestRequestRef.current === requestKey) {
+        if (latestRequestRef.current.isCurrent(requestId)) {
           setFeedbackLoading(false)
         }
       }
     } catch (requestError) {
-      if (latestRequestRef.current === requestKey) {
+      if (latestRequestRef.current.isCurrent(requestId)) {
         setUserData(null)
         setError(requestError.message)
       }
     } finally {
-      if (latestRequestRef.current === requestKey) {
+      if (latestRequestRef.current.isCurrent(requestId)) {
         setLoading(false)
       }
     }
