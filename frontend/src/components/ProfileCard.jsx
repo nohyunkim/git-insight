@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityChart, LanguageChart } from './InsightCharts'
+import { buildCoverageNote, buildEventWindowLabel } from '../utils/eventWindow'
 
 const KAKAO_JAVASCRIPT_KEY = (
   import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY ??
@@ -220,25 +221,11 @@ async function exportCardAsPdf(node, username, summary) {
   pdf.save(buildExportFileName(username, summary, 'pdf'))
 }
 
-function buildWindowLabel(summary) {
-  if (summary?.window_label) {
-    return summary.window_label
-  }
-
-  const days = summary?.window_days ?? 30
-  if (days === 7) return '최근 7일'
-  if (days === 30) return '최근 30일'
-  if (days === 90) return '최근 90일'
-  if (days === 180) return '최근 6개월'
-  if (days === 365) return '최근 1년'
-  return `최근 ${days}일`
-}
-
 function buildInterpretationNotes(summaryLabel) {
   return [
     {
       title: '이 결과는 어떻게 계산되나요?',
-      body: `${summaryLabel} 동안의 공개 이벤트와 공개 저장소 정보를 기준으로 활동량, Push 수, 활동 일수, 언어 분포를 다시 집계합니다. 빠르게 읽기 좋은 형태로 요약한 값이기 때문에 실제 저장소 내용과 함께 보면 더 정확합니다.`,
+      body: `${summaryLabel} 공개 이벤트에서 활동량, Push 수, 활동 일수를 집계했습니다. 언어 분포는 분석 당시 공개 저장소의 대표 언어를 집계한 값입니다.`,
     },
     {
       title: 'Push 수가 높다고 무조건 좋은가요?',
@@ -253,18 +240,6 @@ function buildInterpretationNotes(summaryLabel) {
       body: '언어 분포는 공개 저장소 기준이라 실제 실무 전체 스택과 다를 수 있습니다. 비공개 프로젝트나 실험용 레포가 빠져 있으면 현재 역량보다 좁게 보일 수 있으니, README와 프로젝트 설명으로 보완하는 편이 좋습니다.',
     },
   ]
-}
-
-function buildCoverageNote(summary) {
-  if (!summary?.event_data_incomplete) {
-    return ''
-  }
-
-  if ((summary?.window_days ?? 30) > 90) {
-    return `${buildWindowLabel(summary)} 분석은 GitHub 공개 Events API 조회 한계 때문에 오래된 이벤트가 일부 빠질 수 있습니다. 6개월·1년 결과는 참고용으로 보는 편이 안전합니다.`
-  }
-
-  return `${buildWindowLabel(summary)} 이벤트는 GitHub 공개 Events API 제공 범위까지만 반영됩니다. 활동량이 많은 계정은 장기 기간에서 일부 오래된 이벤트가 제외될 수 있습니다.`
 }
 
 function BookmarkIcon() {
@@ -308,7 +283,7 @@ function ProfileCard({
     push_events_30d: 0,
     active_days_30d: 0,
   }
-  const summaryLabel = buildWindowLabel(summary)
+  const summaryLabel = buildEventWindowLabel(summary)
   const interpretationNotes = buildInterpretationNotes(summaryLabel)
   const coverageNote = buildCoverageNote(summary)
   const strengthText =
@@ -547,7 +522,7 @@ function ProfileCard({
           <div className="profile-sidecard">
             <span className="sidecard-label">현재 활동 온도</span>
             <strong>{summary.total_events_30d > 0 ? '활동 중' : '준비 중'}</strong>
-            <p>{summaryLabel} 공개 이벤트와 언어 분포를 기준으로 요약했습니다.</p>
+            <p>{summaryLabel} 공개 이벤트와 분석 당시 공개 저장소 언어를 기준으로 요약했습니다.</p>
           </div>
         </div>
 

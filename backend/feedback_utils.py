@@ -389,10 +389,12 @@ def build_ai_prompt(
     pull_request_events = event_types.get('PullRequestEvent', 0)
     issue_events = event_types.get('IssuesEvent', 0) + event_types.get('IssueCommentEvent', 0)
     coverage_note = (
-        'GitHub Events API 한계로 장기 기간에서는 오래된 이벤트 일부가 누락될 수 있음.'
-        if activity_summary.get('event_data_incomplete')
-        else '이벤트 데이터는 현재 조회 범위 안에서 충분함.'
+        '선택 기간이 30일보다 길어도 이벤트 수치는 최근 30일 조회분이며 전체 선택 기간 수치가 아님. 언어는 현재 공개 저장소 기준.'
+        if activity_summary.get('window_days', 30) > 30
+        else '이벤트 수치는 GitHub 공개 Events API 조회분이며 언어는 현재 공개 저장소 기준.'
     )
+    if activity_summary.get('event_page_incomplete'):
+        coverage_note += ' 이벤트 페이지 일부를 조회하지 못했으므로 수치가 누락될 수 있음.'
 
     return f"""
 당신은 한국어로 응답하는 GitHub 활동 분석 보조 작성자다.

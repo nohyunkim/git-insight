@@ -869,7 +869,9 @@ function MyPage({
                 <div className="insight-heading">
                   <p className="insight-label">비교 피드백</p>
                   <span className="insight-status">
-                    {comparisonData.comparison_source === 'ai' ? 'AI 비교 반영' : '기본 비교'}
+                    {comparisonData.comparison_meta?.source_detail === 'unrecorded_event_window'
+                      ? '관측 기간 미기록 · 규칙 기반 비교'
+                      : comparisonData.comparison_source === 'ai' ? 'AI 비교 반영' : '기본 비교'}
                   </span>
                 </div>
 
